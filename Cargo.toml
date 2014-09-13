@@ -1,0 +1,12 @@
+[package]
+
+name = "adslbystat"
+version = "0.0.1"
+authors = ["Konstantin Stepanov <me@kstep.me>"]
+
+[dependencies.http]
+git = "https://github.com/chris-morgan/rust-http.git"
+
+[dependencies.encoding]
+git = "https://github.com/lifthrasiir/rust-encoding.git"
+

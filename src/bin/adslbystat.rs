@@ -1,5 +1,6 @@
 #![feature(phase)]
 
+extern crate test;
 extern crate encoding;
 extern crate http;
 extern crate url;
@@ -20,6 +21,7 @@ use encoding::all::WINDOWS_1251;
 use std::str::replace;
 use std::io::File;
 use std::os::getenv;
+use test::Bencher;
 
 fn to_str_err<E: ToString>(e: E) -> String {
     e.to_string()
@@ -78,4 +80,11 @@ fn main() {
         .unwrap_or_else(|err| fail!("ERROR: {}", err));
 
     println!("{}", acct);
+}
+
+#[bench]
+fn bench_main(b: &mut Bencher) {
+    b.iter(|| {
+        main()
+    });
 }

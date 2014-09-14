@@ -3,6 +3,7 @@
 #[cfg(test)]
 extern crate test;
 extern crate encoding;
+extern crate toml;
 extern crate http;
 extern crate url;
 extern crate serialize;
@@ -16,7 +17,7 @@ use http::method::Get;
 //use http::status;
 use serialize::base64::ToBase64;
 use serialize::base64::STANDARD;
-use serialize::{json,Decodable};
+use serialize::Decodable;
 use url::Url;
 use encoding::{Encoding, DecodeReplace};
 use encoding::all::WINDOWS_1251;
@@ -63,17 +64,16 @@ fn main() {
     let price_re = regex!(r"тариф</td>\s*<td class='right'><b>(\d+) ");
     let credit_re = regex!(r"кредит</td>\s*<td class='right'><b>(\d+)%");
 
-    let config_file = getenv("XDG_CONFIG_HOME").map(|p| Path::new(format!("{}/adslby/creds.json", p)))
-        .or_else(|| getenv("HOME").map(|p| Path::new(format!("{}/.config/adslby/creds.json", p))))
+    let config_file = getenv("XDG_CONFIG_HOME").map(|p| Path::new(format!("{}/adslby/creds.toml", p)))
+        .or_else(|| getenv("HOME").map(|p| Path::new(format!("{}/.config/adslby/creds.toml", p))))
         .and_then(|p| if p.exists() { Some(p) } else { None })
-        .or_else(|| path_if_exists("/usr/local/etc/adslby.json"))
-        .or_else(|| path_if_exists("/etc/adslby.json"))
+        .or_else(|| path_if_exists("/usr/local/etc/adslby.toml"))
+        .or_else(|| path_if_exists("/etc/adslby.toml"))
         .unwrap_or_else(|| fail!("Config file not found!"));
 
     let config: Creds = File::open(&config_file).map_err(to_str_err)
         .and_then(|mut f| f.read_to_string().map_err(to_str_err))
-        .and_then(|s| json::from_str(s.as_slice()).map_err(to_str_err))
-        .and_then(|j| Decodable::decode(&mut json::Decoder::new(j)).map_err(to_str_err))
+        .and_then(|s| match toml::decode_str(s.as_slice()) { Some(v) => Ok(v), None => Err("Invalid TOML file".to_string()) })
         .unwrap_or_else(|err| fail!("ERROR: {}", err));
 
     let acct = Url::parse("https://www.adsl.by/001.htm").map_err(to_str_err)

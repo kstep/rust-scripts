@@ -1,5 +1,6 @@
 #![feature(phase)]
 
+#[cfg(test)]
 extern crate test;
 extern crate encoding;
 extern crate http;
@@ -7,7 +8,8 @@ extern crate url;
 extern crate serialize;
 extern crate core;
 extern crate regex;
-#[phase(plugin)] extern crate regex_macros;
+#[phase(plugin)]
+extern crate regex_macros;
 
 use http::client::RequestWriter;
 use http::method::Get;
@@ -21,6 +23,8 @@ use encoding::all::WINDOWS_1251;
 use std::str::replace;
 use std::io::File;
 use std::os::getenv;
+
+#[cfg(test)]
 use test::Bencher;
 
 fn to_str_err<E: ToString>(e: E) -> String {

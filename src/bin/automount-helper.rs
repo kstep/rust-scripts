@@ -1,11 +1,14 @@
 extern crate serialize;
 extern crate collections;
+
+#[cfg(test)]
 extern crate test;
 
 use std::os;
 use std::io;
 use std::fmt;
 
+#[cfg(test)]
 use test::Bencher;
 
 fn automount_name() -> String {

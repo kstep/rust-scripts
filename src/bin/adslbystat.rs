@@ -47,6 +47,11 @@ struct Creds {
     password: String
 }
 
+fn path_if_exists(path: &str) -> Option<Path> {
+    let path = Path::new(path);
+    if path.exists() { Some(path) } else { None }
+}
+
 fn main() {
     let state_re = regex!(r">Аккаунт</td>\s*<td class='right'><b>Включен<");
     let account_re = regex!(r"Осталось трафика на сумму</td>\s*<td class='right'><b>([0-9 ]+)");
@@ -54,8 +59,13 @@ fn main() {
     let price_re = regex!(r"тариф</td>\s*<td class='right'><b>(\d+) ");
     let credit_re = regex!(r"кредит</td>\s*<td class='right'><b>(\d+)%");
 
-    let config_dir = getenv("XDG_CONFIG_HOME").unwrap_or_else(|| format!("{}/.config", getenv("HOME").unwrap()));
-    let config_file = Path::new(format!("{}/adslby/creds.json", config_dir));
+    let config_file = getenv("XDG_CONFIG_HOME").map(|p| Path::new(format!("{}/adslby/creds.json", p)))
+        .or_else(|| getenv("HOME").map(|p| Path::new(format!("{}/.config/adslby/creds.json", p))))
+        .and_then(|p| if p.exists() { Some(p) } else { None })
+        .or_else(|| path_if_exists("/usr/local/etc/adslby.json"))
+        .or_else(|| path_if_exists("/etc/adslby.json"))
+        .unwrap_or_else(|| fail!("Config file not found!"));
+
     let config: Creds = File::open(&config_file).map_err(to_str_err)
         .and_then(|mut f| f.read_to_string().map_err(to_str_err))
         .and_then(|s| json::from_str(s.as_slice()).map_err(to_str_err))
@@ -82,9 +92,36 @@ fn main() {
     println!("{}", acct);
 }
 
+#[test]
+fn test_path_if_exists() {
+    match path_if_exists("/tmp") {
+        Some(p) => assert!(Path::new("/tmp").exists()),
+        None => assert!(!Path::new("/tmp").exists()),
+    }
+    match path_if_exists("/not-exists") {
+        Some(p) => assert!(Path::new("/not-exists").exists()),
+        None => assert!(!Path::new("/not-exists").exists()),
+    }
+}
+
 #[bench]
+#[ignore]
 fn bench_main(b: &mut Bencher) {
     b.iter(|| {
         main()
     });
+}
+
+#[bench]
+fn bench_path_if_exists(b: &mut Bencher) {
+    b.iter(|| {
+        path_if_exists("/tmp")
+    })
+}
+
+#[bench]
+fn bench_path_if_not_exists(b: &mut Bencher) {
+    b.iter(|| {
+        path_if_exists("/not-exists")
+    })
 }

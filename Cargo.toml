@@ -12,3 +12,6 @@ git = "https://github.com/lifthrasiir/rust-encoding.git"
 
 [dependencies.toml]
 git = "https://github.com/alexcrichton/toml-rs.git"
+
+[dependencies.url]
+git = "https://github.com/servo/rust-url.git"

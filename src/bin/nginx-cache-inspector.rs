@@ -1,6 +1,7 @@
 extern crate url;
 
 use std::io::fs;
+use std::os;
 use url::Url;
 
 #[allow(dead_code)]
@@ -32,7 +33,8 @@ fn read_line(reader: &mut Reader) -> Option<String> {
 }
 
 fn main() {
-    let root = Path::new("/var/lib/nginx/cache");
+    let args = os::args();
+    let root = Path::new(if args.len() < 2 { "/var/lib/nginx/cache" } else { args[1].as_slice() });
     let mut files = fs::walk_dir(&root).unwrap_or_else(|e| fail!("Nginx cache dir access error: {}", e)).filter(|p| p.is_file())
         .filter_map(|p| fs::File::open(&p).ok()
                     .and_then(|mut f| f.read_exact(HEADER_SIZE).ok()

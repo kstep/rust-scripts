@@ -1,11 +1,11 @@
 extern crate url;
 
-use std::io::fs;
+use std::io::fs::{File, walk_dir};
+use std::io::BufferedReader;
 use std::os;
 use url::Url;
 
 #[allow(dead_code)]
-#[packed]
 struct NginxCacheHeader {
     unknown: [u8, ..24],
     magic: u32, // '\nKEY'
@@ -20,26 +20,14 @@ impl NginxCacheHeader {
     }
 }
 
-fn read_line(reader: &mut Reader) -> Option<String> {
-    let mut buf = Vec::<u8>::with_capacity(64);
-    while reader.push(64, &mut buf).ok().unwrap_or(0) > 0 {
-        if buf.contains(&0x0a) {
-            buf.iter().position(|c| *c == 0x0a).map(|p| buf.truncate(p));
-            return String::from_utf8(buf).ok();
-        }
-    }
-
-    None
-}
-
 fn main() {
     let args = os::args();
     let root = Path::new(if args.len() < 2 { "/var/lib/nginx/cache" } else { args[1].as_slice() });
-    let mut files = fs::walk_dir(&root).unwrap_or_else(|e| fail!("Nginx cache dir access error: {}", e)).filter(|p| p.is_file())
-        .filter_map(|p| fs::File::open(&p).ok()
+    let mut files = walk_dir(&root).unwrap_or_else(|e| fail!("Nginx cache dir access error: {}", e)).filter(|p| p.is_file())
+        .filter_map(|p| File::open(&p).ok().map(|f| BufferedReader::new(f))
                     .and_then(|mut f| f.read_exact(HEADER_SIZE).ok()
                          .and_then(|d| if unsafe { (*(d.as_ptr() as *const NginxCacheHeader)).check_magic() }
-                                   { read_line(&mut f)
+                                   { f.read_line().ok()
                                        .and_then(|u| Url::parse(u.as_slice()).ok())
                                        .map(|u| (Path::new(p.as_vec()), u))
                                    } else { None })));
@@ -50,3 +38,4 @@ fn main() {
         }
     }
 }
+

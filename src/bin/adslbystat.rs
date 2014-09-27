@@ -23,9 +23,7 @@ use url::Url;
 use encoding::{Encoding, DecodeReplace};
 use encoding::all::WINDOWS_1251;
 use std::str::replace;
-use std::io::fs::PathExtensions;
 use std::io::File;
-use std::os::getenv;
 use xdg::XdgDirs;
 
 #[cfg(test)]
@@ -53,11 +51,6 @@ struct AcctInfo {
 struct Creds {
     username: String,
     password: String
-}
-
-fn path_if_exists(path: &str) -> Option<Path> {
-    let path = Path::new(path);
-    if path.exists() { Some(path) } else { None }
 }
 
 fn main() {

@@ -4,6 +4,7 @@ extern crate collections;
 #[cfg(test)]
 extern crate test;
 
+use std::io::fs::PathExtensions;
 use std::os;
 use std::io;
 use std::fmt;
@@ -33,7 +34,7 @@ fn systemd_encode(inp: &str) -> String {
         if ('a' as u8) <= b && b <= ('z' as u8)
             || ('A' as u8) <= b && b <= ('Z' as u8)
             || ('0' as u8) <= b && b <= ('9' as u8)
-            || b == ('_' as u8) { unsafe{ out.push_byte(b); } }
+            || b == ('_' as u8) { unsafe{ out.as_mut_vec().push(b); } }
         else {
             out.push_str(r"\x");
             out.push_str(fmt::radix(b, 16).to_string().as_slice());

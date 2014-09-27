@@ -23,6 +23,7 @@ use url::Url;
 use encoding::{Encoding, DecodeReplace};
 use encoding::all::WINDOWS_1251;
 use std::str::replace;
+use std::io::fs::PathExtensions;
 use std::io::File;
 use std::os::getenv;
 use xdg::XdgDirs;

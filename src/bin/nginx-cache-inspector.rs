@@ -1,6 +1,6 @@
 extern crate url;
 
-use std::io::fs::{File, walk_dir};
+use std::io::fs::{PathExtensions, File, walk_dir};
 use std::io::BufferedReader;
 use std::os;
 use url::Url;

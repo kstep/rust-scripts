@@ -9,6 +9,7 @@ extern crate url;
 extern crate serialize;
 extern crate core;
 extern crate regex;
+extern crate xdg;
 #[phase(plugin)]
 extern crate regex_macros;
 
@@ -24,6 +25,7 @@ use encoding::all::WINDOWS_1251;
 use std::str::replace;
 use std::io::File;
 use std::os::getenv;
+use xdg::XdgDirs;
 
 #[cfg(test)]
 use test::Bencher;
@@ -64,12 +66,7 @@ fn main() {
     let price_re = regex!(r"тариф</td>\s*<td class='right'><b>(\d+) ");
     let credit_re = regex!(r"кредит</td>\s*<td class='right'><b>(\d+)%");
 
-    let config_file = getenv("XDG_CONFIG_HOME").map(|p| Path::new(format!("{}/adslby/creds.toml", p)))
-        .or_else(|| getenv("HOME").map(|p| Path::new(format!("{}/.config/adslby/creds.toml", p))))
-        .and_then(|p| if p.exists() { Some(p) } else { None })
-        .or_else(|| path_if_exists("/usr/local/etc/adslby.toml"))
-        .or_else(|| path_if_exists("/etc/adslby.toml"))
-        .unwrap_or_else(|| fail!("Config file not found!"));
+    let config_file = XdgDirs::new().want_read_config("adslby/creds.toml").unwrap_or_else(|| fail!("Config file not found!"));
 
     let config: Creds = File::open(&config_file).map_err(to_str_err)
         .and_then(|mut f| f.read_to_string().map_err(to_str_err))

@@ -55,8 +55,8 @@ struct Creds {
 
 fn main() {
     let state_re = regex!(r">Аккаунт</td>\s*<td class='right'><b>Включен<");
-    let account_re = regex!(r"Осталось трафика на сумму</td>\s*<td class='right'><b>([0-9 ]+)");
-    let days_re = regex!(r"осталось <b>(\d+) д");
+    let account_re = regex!(r"Осталось трафика на сумму</td>\s*<td class='right'><b>(-?[0-9 ]+)");
+    let days_re = regex!(r"осталось <b>(-?\d+) д");
     let price_re = regex!(r"тариф</td>\s*<td class='right'><b>(\d+) ");
     let credit_re = regex!(r"кредит</td>\s*<td class='right'><b>(\d+)%");
 

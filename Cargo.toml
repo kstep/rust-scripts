@@ -4,8 +4,13 @@ name = "scripts"
 version = "0.0.1"
 authors = ["Konstantin Stepanov <me@kstep.me>"]
 
+[dependencies]
+url = "*"
+regex = "*"
+rustc-serialize = "*"
+
 [dependencies.http]
-git = "https://github.com/chris-morgan/rust-http.git"
+git = "https://github.com/kstep/rust-http.git"
 
 [dependencies.encoding]
 git = "https://github.com/lifthrasiir/rust-encoding.git"
@@ -13,9 +18,11 @@ git = "https://github.com/lifthrasiir/rust-encoding.git"
 [dependencies.toml]
 git = "https://github.com/alexcrichton/toml-rs.git"
 
-[dependencies.url]
-git = "https://github.com/servo/rust-url.git"
-
 [dependencies.xdg]
 git = "https://github.com/o11c/rust-xdg.git"
 
+[dependencies.curl]
+git = "https://github.com/carllerche/curl-rust.git"
+
+[dependencies.pb]
+git = "https://github.com/kstep/rust-pb.git"

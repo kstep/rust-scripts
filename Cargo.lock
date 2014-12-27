@@ -1,0 +1,209 @@
+[root]
+name = "scripts"
+version = "0.0.1"
+dependencies = [
+ "curl 0.1.3 (git+https://github.com/carllerche/curl-rust.git)",
+ "encoding 0.2.10 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+ "http 0.1.0-pre (git+https://github.com/kstep/rust-http.git)",
+ "pb 0.0.1 (git+https://github.com/kstep/rust-pb.git)",
+ "regex 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "toml 0.1.7 (git+https://github.com/alexcrichton/toml-rs.git)",
+ "url 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "xdg 0.1.0 (git+https://github.com/o11c/rust-xdg.git)",
+]
+
+[[package]]
+name = "curl"
+version = "0.1.3"
+source = "git+https://github.com/carllerche/curl-rust.git#4517ee606c65bbe03e4ad4f661725eb80e667a69"
+dependencies = [
+ "curl-sys 0.1.2 (git+https://github.com/carllerche/curl-rust.git)",
+ "url 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "curl-sys"
+version = "0.1.2"
+source = "git+https://github.com/carllerche/curl-rust.git#4517ee606c65bbe03e4ad4f661725eb80e667a69"
+dependencies = [
+ "libz-sys 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl-sys 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "encoding"
+version = "0.2.10"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#6dc03d213c8b5b964faedc5f0bb4b6625cf841f1"
+dependencies = [
+ "encoding-index-japanese 1.0.20141219 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+ "encoding-index-korean 1.2.20141219 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+ "encoding-index-simpchinese 1.0.20141219 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+ "encoding-index-singlebyte 1.0.20141106 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+ "encoding-index-tradchinese 1.0.20141106 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+]
+
+[[package]]
+name = "encoding-index-japanese"
+version = "1.0.20141219"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#6dc03d213c8b5b964faedc5f0bb4b6625cf841f1"
+dependencies = [
+ "encoding_index_tests 0.1.2 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+]
+
+[[package]]
+name = "encoding-index-korean"
+version = "1.2.20141219"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#6dc03d213c8b5b964faedc5f0bb4b6625cf841f1"
+dependencies = [
+ "encoding_index_tests 0.1.2 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+]
+
+[[package]]
+name = "encoding-index-simpchinese"
+version = "1.0.20141219"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#6dc03d213c8b5b964faedc5f0bb4b6625cf841f1"
+dependencies = [
+ "encoding_index_tests 0.1.2 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+]
+
+[[package]]
+name = "encoding-index-singlebyte"
+version = "1.0.20141106"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#6dc03d213c8b5b964faedc5f0bb4b6625cf841f1"
+dependencies = [
+ "encoding_index_tests 0.1.2 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+]
+
+[[package]]
+name = "encoding-index-tradchinese"
+version = "1.0.20141106"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#6dc03d213c8b5b964faedc5f0bb4b6625cf841f1"
+dependencies = [
+ "encoding_index_tests 0.1.2 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+]
+
+[[package]]
+name = "encoding_index_tests"
+version = "0.1.2"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#6dc03d213c8b5b964faedc5f0bb4b6625cf841f1"
+
+[[package]]
+name = "gcc"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "http"
+version = "0.1.0-pre"
+source = "git+https://github.com/kstep/rust-http.git#46b206e40ef314d2daf1504f44200895b499b4a0"
+dependencies = [
+ "log 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "libressl-pnacl-sys"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "pnacl-build-helper 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "libz-sys"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "pkg-config 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "log"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "regex 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "openssl"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "openssl-sys 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "openssl-sys"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libressl-pnacl-sys 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "pb"
+version = "0.0.1"
+source = "git+https://github.com/kstep/rust-pb.git#3c783613cc93906f5078a952d9ef039584b11f4e"
+dependencies = [
+ "http 0.1.0-pre (git+https://github.com/kstep/rust-http.git)",
+ "rustc-serialize 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "pkg-config"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "pnacl-build-helper"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "regex"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "rustc-serialize"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "time"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "gcc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "toml"
+version = "0.1.7"
+source = "git+https://github.com/alexcrichton/toml-rs.git#31ee496621384f9c6d670c32d576411cfcc79bc1"
+dependencies = [
+ "rustc-serialize 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "url"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "rustc-serialize 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "xdg"
+version = "0.1.0"
+source = "git+https://github.com/o11c/rust-xdg.git#c5ca764bc3aa49aa6506bcdf9075f9c7c4a10611"
+

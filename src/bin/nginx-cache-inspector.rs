@@ -1,3 +1,5 @@
+#![feature(slicing_syntax)]
+
 extern crate url;
 
 use std::io::fs::{PathExtensions, File, walk_dir};
@@ -22,13 +24,13 @@ impl NginxCacheHeader {
 
 fn main() {
     let args = os::args();
-    let root = Path::new(if args.len() < 2 { "/var/lib/nginx/cache" } else { args[1].as_slice() });
-    let mut files = walk_dir(&root).unwrap_or_else(|e| fail!("Nginx cache dir access error: {}", e)).filter(|p| p.is_file())
+    let root = Path::new(if args.len() < 2 { "/var/lib/nginx/cache" } else { args[1][] });
+    let mut files = walk_dir(&root).unwrap_or_else(|e| panic!("Nginx cache dir access error: {}", e)).filter(|p| p.is_file())
         .filter_map(|p| File::open(&p).ok().map(|f| BufferedReader::new(f))
                     .and_then(|mut f| f.read_exact(HEADER_SIZE).ok()
                          .and_then(|d| if unsafe { (*(d.as_ptr() as *const NginxCacheHeader)).check_magic() }
                                    { f.read_line().ok()
-                                       .and_then(|u| Url::parse(u.as_slice()).ok())
+                                       .and_then(|u| Url::parse(u[]).ok())
                                        .map(|u| (Path::new(p.as_vec()), u))
                                    } else { None })));
 

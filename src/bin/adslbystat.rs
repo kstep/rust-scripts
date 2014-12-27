@@ -1,4 +1,5 @@
 #![feature(phase)]
+#![feature(slicing_syntax)]
 
 #[cfg(test)]
 extern crate test;
@@ -6,7 +7,7 @@ extern crate encoding;
 extern crate toml;
 extern crate http;
 extern crate url;
-extern crate serialize;
+extern crate "rustc-serialize" as serialize;
 extern crate core;
 extern crate regex;
 extern crate xdg;
@@ -20,7 +21,7 @@ use serialize::base64::ToBase64;
 use serialize::base64::STANDARD;
 use serialize::Decodable;
 use url::Url;
-use encoding::{Encoding, DecodeReplace};
+use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
 use std::str::replace;
 use std::io::File;
@@ -60,12 +61,12 @@ fn main() {
     let price_re = regex!(r"тариф</td>\s*<td class='right'><b>(\d+) ");
     let credit_re = regex!(r"кредит</td>\s*<td class='right'><b>(\d+)%");
 
-    let config_file = XdgDirs::new().want_read_config("adslby/creds.toml").unwrap_or_else(|| fail!("Config file not found!"));
+    let config_file = XdgDirs::new().want_read_config("adslby/creds.toml").unwrap_or_else(|| panic!("Config file not found!"));
 
     let config: Creds = File::open(&config_file).map_err(to_str_err)
         .and_then(|mut f| f.read_to_string().map_err(to_str_err))
-        .and_then(|s| match toml::decode_str(s.as_slice()) { Some(v) => Ok(v), None => Err("Invalid TOML file".to_string()) })
-        .unwrap_or_else(|err| fail!("ERROR: {}", err));
+        .and_then(|s| match toml::decode_str(s[]) { Some(v) => Ok(v), None => Err("Invalid TOML file".to_string()) })
+        .unwrap_or_else(|err| panic!("ERROR: {}", err));
 
     let acct = Url::parse("https://www.adsl.by/001.htm").map_err(to_str_err)
         .and_then(|url| RequestWriter::new(Get, url).map_err(to_str_err))
@@ -74,15 +75,15 @@ fn main() {
             req.read_response().map_err(req_to_str_err)
         })
         .and_then(|mut resp| resp.read_to_end().map_err(to_str_err))
-        .and_then(|cont| WINDOWS_1251.decode(cont.as_slice(), DecodeReplace).map_err(to_str_err))
+        .and_then(|cont| WINDOWS_1251.decode(cont[], DecoderTrap::Replace).map_err(to_str_err))
         .map(|cont| AcctInfo {
-            enabled: state_re.is_match(cont.as_slice()),
-            account: account_re.captures(cont.as_slice()).and_then(|c| from_str(replace(c.at(1), " ", "").as_slice())).unwrap_or(0),
-            days: days_re.captures(cont.as_slice()).and_then(|c| from_str(c.at(1))).unwrap_or(0),
-            price: price_re.captures(cont.as_slice()).and_then(|c| from_str(c.at(1))).unwrap_or(0),
-            credit: credit_re.captures(cont.as_slice()).and_then(|c| from_str(c.at(1)))
+            enabled: state_re.is_match(cont[]),
+            account: account_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| from_str(replace(v, " ", "")[]))).unwrap_or(0),
+            days: days_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| from_str(v))).unwrap_or(0),
+            price: price_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| from_str(v))).unwrap_or(0),
+            credit: credit_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| from_str(v)))
         })
-        .unwrap_or_else(|err| fail!("ERROR: {}", err));
+        .unwrap_or_else(|err| panic!("ERROR: {}", err));
 
     println!("{}", acct);
 }

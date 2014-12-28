@@ -236,7 +236,7 @@ fn add_to_transmission(url: &str) -> bool {
                 return from_utf8(resp.get_body()).unwrap().contains("torrent-added");
             },
             409 => {
-                token = resp.get_header("X-Transmission-Session-Id")[0].clone();
+                token = resp.get_header("x-transmission-session-id")[0].clone();
             },
             code @ _ => {
                 panic!("unexpected error code {} for torrent {}", code, url);

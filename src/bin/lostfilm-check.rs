@@ -22,8 +22,6 @@ use url::{Url, form_urlencoded};
 use xml::reader::EventReader;
 use xml::reader::events::XmlEvent;
 use xml::name::OwnedName;
-use std::io;
-use std::io::{File, IoResult, standard_error};
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::str::from_utf8;
@@ -124,7 +122,8 @@ fn login(login: &str, password: &str) {
         .verify_peer(false)
         .header("User-Agent", USER_AGENT)
         .header("Referer", LOGIN_URL)
-        .exec();
+        .exec()
+        .unwrap();
 }
 
 enum RssState {
@@ -223,7 +222,7 @@ fn extract_torrent_link(details_url: &str) -> String {
     torrent_link_re.captures(decoded_body[]).unwrap().at(1).unwrap().to_string()
 }
 
-fn add_to_transmission(title: &str, url: &str) -> bool {
+fn add_to_transmission(url: &str) -> bool {
     let mut token = "".to_string();
 
     loop {
@@ -256,7 +255,7 @@ fn main() {
 
     let urls = get_torrent_urls(config.include[], config.exclude[]);
     for &(ref title, ref url) in urls.iter() {
-        if add_to_transmission(title[], url[]) {
+        if add_to_transmission(url[]) {
             notify(&pbapi, title[], url[]);
         }
     }

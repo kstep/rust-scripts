@@ -18,7 +18,7 @@ struct Config {
     access_token: String
 }
 
-fn load_config() -> Option<Config> {
+fn load_config<C: Decodable<_, _>>() -> Option<C> {
     XdgDirs::new().want_read_config("pushbullet/creds.toml")
         .and_then(|ref p| File::open(p).ok())
         .and_then(|mut f| f.read_to_string().ok())
@@ -26,7 +26,7 @@ fn load_config() -> Option<Config> {
 }
 
 fn main() {
-    let api = PbAPI::new(load_config().unwrap().access_token[]);
+    let api = PbAPI::new(load_config::<Config>().unwrap().access_token[]);
     let torrent_name = getenv("TR_TORRENT_NAME").unwrap();
     let torrent_dir = getenv("TR_TORRENT_DIR").unwrap();
     let push = PushMsg {
@@ -37,6 +37,7 @@ fn main() {
         source_device_iden: None
     };
 
-
     api.send::<Push, PushMsg>(&push).unwrap();
 }
+
+

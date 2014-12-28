@@ -222,29 +222,41 @@ fn extract_torrent_link(details_url: &str) -> String {
     torrent_link_re.captures(decoded_body[]).unwrap().at(1).unwrap().to_string()
 }
 
-fn add_to_transmission(url: &str) -> bool {
-    let mut token = "".to_string();
+struct TransmissionAPI {
+    token: String,
+    tag: uint
+}
 
-    loop {
-        let resp = curl::http::handle()
-            .post(TRANSMISSION_URL, format!(r#"{{"tag":"{}","method":"torrent-add","arguments":{{"filename":"{}"}}}}"#, token, url)[])
-            .exec()
-            .unwrap();
-
-        match resp.get_code() {
-            200 => {
-                return from_utf8(resp.get_body()).unwrap().contains("torrent-added");
-            },
-            409 => {
-                token = resp.get_header("x-transmission-session-id")[0].clone();
-            },
-            code @ _ => {
-                panic!("unexpected error code {} for torrent {}", code, url);
-            }
+impl TransmissionAPI {
+    fn new() -> TransmissionAPI {
+        TransmissionAPI {
+            token: "".to_string(),
+            tag: 0
         }
     }
 
+    fn add_torrent(&mut self, url: &str) -> bool {
+        loop {
+            self.tag = self.tag + 1;
+            let resp = curl::http::handle()
+                .post(TRANSMISSION_URL, format!(r#"{{"tag":"{}","method":"torrent-add","arguments":{{"filename":"{}"}}}}"#, self.tag, url)[])
+                .header("x-transmission-session-id", self.token[])
+                .exec()
+                .unwrap();
 
+            match resp.get_code() {
+                200 => {
+                    return from_utf8(resp.get_body()).unwrap().contains("torrent-added");
+                },
+                409 => {
+                    self.token = resp.get_header("x-transmission-session-id")[0].clone();
+                },
+                code @ _ => {
+                    panic!("unexpected error code {} for torrent {}", code, url);
+                }
+            }
+        }
+    }
 }
 
 fn main() {
@@ -252,10 +264,11 @@ fn main() {
     login(config.username[], config.password[]);
 
     let pbapi = PbAPI::new(utils::load_config::<PbConfig>("pushbullet/creds.toml").unwrap().access_token[]);
+    let mut trans = TransmissionAPI::new();
 
     let urls = get_torrent_urls(config.include[], config.exclude[]);
     for &(ref title, ref url) in urls.iter() {
-        if add_to_transmission(url[]) {
+        if trans.add_torrent(url[]) {
             notify(&pbapi, title[], url[]);
         }
     }

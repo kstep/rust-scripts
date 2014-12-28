@@ -7,7 +7,7 @@ extern crate encoding;
 extern crate toml;
 extern crate http;
 extern crate url;
-extern crate "rustc-serialize" as serialize;
+extern crate "rustc-serialize" as rustc_serialize;
 extern crate core;
 extern crate regex;
 extern crate xdg;
@@ -17,13 +17,11 @@ extern crate regex_macros;
 use http::client::RequestWriter;
 use http::method::Get;
 //use http::status;
-use serialize::base64::ToBase64;
-use serialize::base64::STANDARD;
-use serialize::Decodable;
+use rustc_serialize::base64::ToBase64;
+use rustc_serialize::base64::STANDARD;
 use url::Url;
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
-use std::str::replace;
 use std::io::File;
 use xdg::XdgDirs;
 
@@ -48,7 +46,7 @@ struct AcctInfo {
     credit: Option<int>
 }
 
-#[deriving(Decodable, Show)]
+#[deriving(RustcDecodable, Show)]
 struct Creds {
     username: String,
     password: String
@@ -78,10 +76,10 @@ fn main() {
         .and_then(|cont| WINDOWS_1251.decode(cont[], DecoderTrap::Replace).map_err(to_str_err))
         .map(|cont| AcctInfo {
             enabled: state_re.is_match(cont[]),
-            account: account_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| from_str(replace(v, " ", "")[]))).unwrap_or(0),
-            days: days_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| from_str(v))).unwrap_or(0),
-            price: price_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| from_str(v))).unwrap_or(0),
-            credit: credit_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| from_str(v)))
+            account: account_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| v.replace(" ", "").parse())).unwrap_or(0),
+            days: days_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| v.parse())).unwrap_or(0),
+            price: price_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| v.parse())).unwrap_or(0),
+            credit: credit_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| v.parse()))
         })
         .unwrap_or_else(|err| panic!("ERROR: {}", err));
 

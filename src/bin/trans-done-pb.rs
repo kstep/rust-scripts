@@ -3,7 +3,7 @@
 extern crate pb;
 extern crate xdg;
 extern crate toml;
-extern crate "rustc-serialize" as serialize;
+extern crate "rustc-serialize" as rustc_serialize;
 
 use pb::api::PbAPI;
 use pb::messages::{PushMsg, TargetIden};
@@ -11,14 +11,15 @@ use pb::objects::{Push, PushData};
 use std::os::getenv;
 use std::io::File;
 use xdg::XdgDirs;
-use serialize::Decodable;
+use rustc_serialize::Decodable;
 
-#[deriving(Decodable)]
+#[deriving(RustcDecodable)]
 struct Config {
     access_token: String
 }
 
-fn load_config<C: Decodable<_, _>>() -> Option<C> {
+fn load_config<C>() -> Option<C>
+    where C: Decodable<toml::Decoder, toml::DecodeError> {
     XdgDirs::new().want_read_config("pushbullet/creds.toml")
         .and_then(|ref p| File::open(p).ok())
         .and_then(|mut f| f.read_to_string().ok())

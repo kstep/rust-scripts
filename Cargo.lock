@@ -101,7 +101,7 @@ source = "git+https://github.com/kstep/rust-http.git#46b206e40ef314d2daf1504f442
 dependencies = [
  "log 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "time 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -149,7 +149,7 @@ dependencies = [
 [[package]]
 name = "pb"
 version = "0.0.1"
-source = "git+https://github.com/kstep/rust-pb.git#3c783613cc93906f5078a952d9ef039584b11f4e"
+source = "git+https://github.com/kstep/rust-pb.git#6ae39a066e2e6847c90c5687264075a683fc3eca"
 dependencies = [
  "http 0.1.0-pre (git+https://github.com/kstep/rust-http.git)",
  "rustc-serialize 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -178,12 +178,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "time"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "gcc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

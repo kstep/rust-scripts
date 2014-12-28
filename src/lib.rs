@@ -8,9 +8,9 @@ use rustc_serialize::Decodable;
 use std::io::File;
 use xdg::XdgDirs;
 
-pub fn load_config<C>() -> Option<C>
+pub fn load_config<C>(filename: &str) -> Option<C>
     where C: Decodable<toml::Decoder, toml::DecodeError> {
-    XdgDirs::new().want_read_config("pushbullet/creds.toml")
+    XdgDirs::new().want_read_config(filename)
         .and_then(|ref p| File::open(p).ok())
         .and_then(|mut f| f.read_to_string().ok())
         .and_then(|s| toml::decode_str(s[]))

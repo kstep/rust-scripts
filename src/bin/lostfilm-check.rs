@@ -79,6 +79,7 @@ macro_rules! mime {
     }
 }
 
+#[allow(unused_must_use)]
 fn login(login: &str, password: &str) {
     let mut url = Url::parse(LOGIN_URL).unwrap();
     url.set_query_from_pairs(vec![("referer", BASE_URL)].into_iter());
@@ -122,8 +123,7 @@ fn login(login: &str, password: &str) {
         .verify_peer(false)
         .header("User-Agent", USER_AGENT)
         .header("Referer", LOGIN_URL)
-        .exec()
-        .unwrap();
+        .exec();
 }
 
 enum RssState {

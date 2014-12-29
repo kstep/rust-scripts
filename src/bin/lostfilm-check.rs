@@ -176,7 +176,7 @@ fn get_torrent_urls(include: &[String], exclude: &[String]) -> Vec<(String, Stri
                     }
                 },
                 RssState::InLink if needed => {
-                    result.push((title.to_string(), extract_torrent_link(value.replace("/download.php?", "/details.php?").rsplitn(1, '&').last().unwrap())));
+                    result.push((title.clone(), extract_torrent_link(value.replace("/download.php?", "/details.php?").rsplitn(1, '&').last().unwrap())));
                 },
                 _ => ()
             },
@@ -188,7 +188,7 @@ fn get_torrent_urls(include: &[String], exclude: &[String]) -> Vec<(String, Stri
 }
 
 fn extract_torrent_link(details_url: &str) -> String {
-    let a_download_tag_re = regex!(r#"<a href="javascript:\{\};" onMouseOver="setCookie\('(\w+)','([a-f0-9]+)'\)" title="Искать" alt="Искать" class="a_download" onClick="ShowAllReleases\('([0-9]+)','([0-9.]+)','([0-9]+)'\)"></a>"#);
+    let a_download_tag_re = regex!(r#"<a href="javascript:\{\};" onMouseOver="setCookie\('(\w+)','([a-f0-9]+)'\)" class="a_download" onClick="ShowAllReleases\('([0-9]+)','([0-9.]+)','([0-9]+)'\)"></a>"#);
     let torrent_link_re = regex!(r#"href="(http://tracktor\.in/td\.php\?s=[^"]+)""#);
 
     let cookie_jar = Path::new(COOKIE_JAR);

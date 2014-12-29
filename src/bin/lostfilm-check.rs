@@ -49,7 +49,7 @@ struct PbConfig {
     access_token: String
 }
 
-fn notify(api: &PbAPI, url: &str, title: &str) {
+fn notify(api: &PbAPI, title: &str, url: &str) {
     println!("added torrent {}: {}",  title, url);
 
     let push = PushMsg {

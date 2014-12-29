@@ -150,7 +150,7 @@ dependencies = [
 [[package]]
 name = "pb"
 version = "0.0.1"
-source = "git+https://github.com/kstep/rust-pb.git#6ae39a066e2e6847c90c5687264075a683fc3eca"
+source = "git+https://github.com/kstep/rust-pb.git#e710a098bd428a0de662d61c77d4af1e5ad405cb"
 dependencies = [
  "http 0.1.0-pre (git+https://github.com/kstep/rust-http.git)",
  "rustc-serialize 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",

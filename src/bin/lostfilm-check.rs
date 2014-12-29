@@ -56,7 +56,7 @@ fn notify(api: &PbAPI, url: &str, title: &str) {
         title: Some(format!("New LostFilm release: {}", title)),
         body: None,
         target: TargetIden::CurrentUser,
-        data: PushData::Url(Url::parse(url).ok()),
+        data: PushData::Link(Url::parse(url).ok()),
         source_device_iden: None
     };
 

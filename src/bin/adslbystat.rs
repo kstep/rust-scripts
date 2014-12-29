@@ -10,7 +10,7 @@ extern crate url;
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate core;
 extern crate regex;
-extern crate xdg;
+extern crate "script-utils" as utils;
 #[phase(plugin)]
 extern crate regex_macros;
 
@@ -22,8 +22,6 @@ use rustc_serialize::base64::STANDARD;
 use url::Url;
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
-use std::io::File;
-use xdg::XdgDirs;
 
 #[cfg(test)]
 use test::Bencher;
@@ -59,12 +57,7 @@ fn main() {
     let price_re = regex!(r"тариф</td>\s*<td class='right'><b>(\d+) ");
     let credit_re = regex!(r"кредит</td>\s*<td class='right'><b>(\d+)%");
 
-    let config_file = XdgDirs::new().want_read_config("adslby/creds.toml").unwrap_or_else(|| panic!("Config file not found!"));
-
-    let config: Creds = File::open(&config_file).map_err(to_str_err)
-        .and_then(|mut f| f.read_to_string().map_err(to_str_err))
-        .and_then(|s| match toml::decode_str(s[]) { Some(v) => Ok(v), None => Err("Invalid TOML file".to_string()) })
-        .unwrap_or_else(|err| panic!("ERROR: {}", err));
+    let config: Creds = utils::load_config("adslby/creds.toml").expect("config file load error");
 
     let acct = Url::parse("https://www.adsl.by/001.htm").map_err(to_str_err)
         .and_then(|url| RequestWriter::new(Get, url).map_err(to_str_err))

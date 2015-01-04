@@ -1,4 +1,5 @@
 #![feature(slicing_syntax)]
+#![feature(old_orphan_check)]
 
 extern crate url;
 
@@ -9,11 +10,11 @@ use url::Url;
 
 #[allow(dead_code)]
 struct NginxCacheHeader {
-    unknown: [u8, ..24],
+    unknown: [u8; 24],
     magic: u32, // '\nKEY'
     delim: u16 // ': '
 }
-// or maybe { unknown: [u8, ..22], magic: u64 ('\0\0\nKEY: ') }
+// or maybe { unknown: [u8; 22], magic: u64 ('\0\0\nKEY: ') }
 static HEADER_SIZE: uint = 30;
 
 impl NginxCacheHeader {

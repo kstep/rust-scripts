@@ -1,4 +1,5 @@
 #![feature(slicing_syntax)]
+#![feature(old_orphan_check)]
 
 extern crate xdg;
 extern crate toml;

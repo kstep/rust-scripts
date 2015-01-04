@@ -16,7 +16,7 @@ rustc-serialize = "*"
 git = "https://github.com/kstep/rust-http.git"
 
 [dependencies.encoding]
-git = "https://github.com/lifthrasiir/rust-encoding.git"
+git = "https://github.com/kstep/rust-encoding.git"
 
 [dependencies.toml]
 git = "https://github.com/alexcrichton/toml-rs.git"

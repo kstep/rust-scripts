@@ -1,6 +1,7 @@
 #![feature(macro_rules)]
 #![feature(phase)]
 #![feature(slicing_syntax)]
+#![feature(old_orphan_check)]
 
 extern crate encoding;
 

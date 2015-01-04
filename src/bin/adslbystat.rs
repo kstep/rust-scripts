@@ -1,5 +1,6 @@
 #![feature(phase)]
 #![feature(slicing_syntax)]
+#![feature(old_orphan_check)]
 
 #[cfg(test)]
 extern crate test;

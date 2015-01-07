@@ -2,93 +2,87 @@
 name = "scripts"
 version = "0.0.1"
 dependencies = [
- "curl 0.1.5 (git+https://github.com/kstep/curl-rust.git)",
- "encoding 0.2.12 (git+https://github.com/kstep/rust-encoding.git)",
- "http 0.1.0-pre (git+https://github.com/kstep/rust-http.git)",
+ "cookie 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "encoding 0.2.16 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+ "hyper 0.0.21 (git+https://github.com/hyperium/hyper.git)",
+ "openssl 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "pb 0.0.1 (git+https://github.com/kstep/rust-pb.git)",
- "regex 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex_macros 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.1.8 (git+https://github.com/alexcrichton/toml-rs.git)",
- "url 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "xdg 0.1.0 (git+https://github.com/o11c/rust-xdg.git)",
- "xml-rs 0.1.7 (git+https://github.com/netvl/xml-rs.git)",
+ "url 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "xdg 0.1.0 (git+https://github.com/kstep/rust-xdg.git)",
+ "xml-rs 0.1.9 (git+https://github.com/bfops/xml-rs.git)",
 ]
 
 [[package]]
-name = "curl"
-version = "0.1.5"
-source = "git+https://github.com/kstep/curl-rust.git#bc4511c1b59e0aca7c6e84dd25ba1dcf64e4cb64"
+name = "cookie"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "curl-sys 0.1.3 (git+https://github.com/kstep/curl-rust.git)",
- "url 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "curl-sys"
-version = "0.1.3"
-source = "git+https://github.com/kstep/curl-rust.git#bc4511c1b59e0aca7c6e84dd25ba1dcf64e4cb64"
-dependencies = [
- "libz-sys 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "openssl-sys 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "pkg-config 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "encoding"
-version = "0.2.12"
-source = "git+https://github.com/kstep/rust-encoding.git#22ec93500c62224a5d27dc594718307ef096749f"
+version = "0.2.16"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#a1aeaa5c7495b133aa7e1c2975372f89b835c8d2"
 dependencies = [
- "encoding-index-japanese 1.0.20141219 (git+https://github.com/kstep/rust-encoding.git)",
- "encoding-index-korean 1.2.20141219 (git+https://github.com/kstep/rust-encoding.git)",
- "encoding-index-simpchinese 1.0.20141219 (git+https://github.com/kstep/rust-encoding.git)",
- "encoding-index-singlebyte 1.0.20141106 (git+https://github.com/kstep/rust-encoding.git)",
- "encoding-index-tradchinese 1.0.20141106 (git+https://github.com/kstep/rust-encoding.git)",
+ "encoding-index-japanese 1.0.20141219 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+ "encoding-index-korean 1.2.20141219 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+ "encoding-index-simpchinese 1.0.20141219 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+ "encoding-index-singlebyte 1.0.20141106 (git+https://github.com/lifthrasiir/rust-encoding.git)",
+ "encoding-index-tradchinese 1.0.20141106 (git+https://github.com/lifthrasiir/rust-encoding.git)",
 ]
 
 [[package]]
 name = "encoding-index-japanese"
 version = "1.0.20141219"
-source = "git+https://github.com/kstep/rust-encoding.git#22ec93500c62224a5d27dc594718307ef096749f"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#a1aeaa5c7495b133aa7e1c2975372f89b835c8d2"
 dependencies = [
- "encoding_index_tests 0.1.2 (git+https://github.com/kstep/rust-encoding.git)",
+ "encoding_index_tests 0.1.2 (git+https://github.com/lifthrasiir/rust-encoding.git)",
 ]
 
 [[package]]
 name = "encoding-index-korean"
 version = "1.2.20141219"
-source = "git+https://github.com/kstep/rust-encoding.git#22ec93500c62224a5d27dc594718307ef096749f"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#a1aeaa5c7495b133aa7e1c2975372f89b835c8d2"
 dependencies = [
- "encoding_index_tests 0.1.2 (git+https://github.com/kstep/rust-encoding.git)",
+ "encoding_index_tests 0.1.2 (git+https://github.com/lifthrasiir/rust-encoding.git)",
 ]
 
 [[package]]
 name = "encoding-index-simpchinese"
 version = "1.0.20141219"
-source = "git+https://github.com/kstep/rust-encoding.git#22ec93500c62224a5d27dc594718307ef096749f"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#a1aeaa5c7495b133aa7e1c2975372f89b835c8d2"
 dependencies = [
- "encoding_index_tests 0.1.2 (git+https://github.com/kstep/rust-encoding.git)",
+ "encoding_index_tests 0.1.2 (git+https://github.com/lifthrasiir/rust-encoding.git)",
 ]
 
 [[package]]
 name = "encoding-index-singlebyte"
 version = "1.0.20141106"
-source = "git+https://github.com/kstep/rust-encoding.git#22ec93500c62224a5d27dc594718307ef096749f"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#a1aeaa5c7495b133aa7e1c2975372f89b835c8d2"
 dependencies = [
- "encoding_index_tests 0.1.2 (git+https://github.com/kstep/rust-encoding.git)",
+ "encoding_index_tests 0.1.2 (git+https://github.com/lifthrasiir/rust-encoding.git)",
 ]
 
 [[package]]
 name = "encoding-index-tradchinese"
 version = "1.0.20141106"
-source = "git+https://github.com/kstep/rust-encoding.git#22ec93500c62224a5d27dc594718307ef096749f"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#a1aeaa5c7495b133aa7e1c2975372f89b835c8d2"
 dependencies = [
- "encoding_index_tests 0.1.2 (git+https://github.com/kstep/rust-encoding.git)",
+ "encoding_index_tests 0.1.2 (git+https://github.com/lifthrasiir/rust-encoding.git)",
 ]
 
 [[package]]
 name = "encoding_index_tests"
 version = "0.1.2"
-source = "git+https://github.com/kstep/rust-encoding.git#22ec93500c62224a5d27dc594718307ef096749f"
+source = "git+https://github.com/lifthrasiir/rust-encoding.git#a1aeaa5c7495b133aa7e1c2975372f89b835c8d2"
 
 [[package]]
 name = "gcc"
@@ -96,14 +90,20 @@ version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "http"
-version = "0.1.0-pre"
-source = "git+https://github.com/kstep/rust-http.git#94eee526a85f5dabdd283d5b9f50c71e09558ce7"
+name = "hyper"
+version = "0.0.21"
+source = "git+https://github.com/hyperium/hyper.git#2dd55d7ae06a7d4bd97c531baf4fb485a77f488e"
 dependencies = [
+ "cookie 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "openssl 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "time 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "url 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mime 0.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mucell 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "typeable 0.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unsafe-any 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -115,32 +115,37 @@ dependencies = [
 ]
 
 [[package]]
-name = "libz-sys"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "pkg-config 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "log"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "regex 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
-name = "openssl"
-version = "0.2.11"
+name = "mime"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "openssl-sys 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "mucell"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "openssl"
+version = "0.2.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "openssl-sys 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "openssl-sys"
-version = "0.2.11"
+version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libressl-pnacl-sys 2.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -150,11 +155,11 @@ dependencies = [
 [[package]]
 name = "pb"
 version = "0.0.1"
-source = "git+https://github.com/kstep/rust-pb.git#c010e360c04c0d72ec9a2d6103641005b8660109"
+source = "git+https://github.com/kstep/rust-pb.git#d5091f121de1640fc770ec5ba9cd62b2d6e076b4"
 dependencies = [
- "http 0.1.0-pre (git+https://github.com/kstep/rust-http.git)",
- "rustc-serialize 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "url 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hyper 0.0.21 (git+https://github.com/hyperium/hyper.git)",
+ "rustc-serialize 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -169,17 +174,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "regex"
-version = "0.1.6"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "regex_macros"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "regex 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "rustc-serialize"
-version = "0.2.2"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "time"
-version = "0.1.7"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "gcc 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -188,26 +201,36 @@ dependencies = [
 [[package]]
 name = "toml"
 version = "0.1.8"
-source = "git+https://github.com/alexcrichton/toml-rs.git#5604270dc7420c384f8d6133637b205fb9265a72"
+source = "git+https://github.com/alexcrichton/toml-rs.git#6195861f53c6731bedce5900a624986b8d4247c8"
 dependencies = [
- "rustc-serialize 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
+name = "typeable"
+version = "0.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "unsafe-any"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "url"
-version = "0.2.12"
+version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "rustc-serialize 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "xdg"
 version = "0.1.0"
-source = "git+https://github.com/o11c/rust-xdg.git#c5ca764bc3aa49aa6506bcdf9075f9c7c4a10611"
+source = "git+https://github.com/kstep/rust-xdg.git#9dc6e4787f5e243a7657c530d075cf4bdad12a4d"
 
 [[package]]
 name = "xml-rs"
-version = "0.1.7"
-source = "git+https://github.com/netvl/xml-rs.git#9e783144407087696e17caa0e31d1e4cedf89629"
+version = "0.1.9"
+source = "git+https://github.com/bfops/xml-rs.git#14761d89a8809e32f5c69c7605a878e7e0a84e96"
 

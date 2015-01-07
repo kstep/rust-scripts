@@ -16,7 +16,7 @@ struct Config {
 }
 
 fn main() {
-    let api = PbAPI::new(utils::load_config::<Config>("pushbullet/creds.toml").unwrap().access_token[]);
+    let mut api = PbAPI::new(utils::load_config::<Config>("pushbullet/creds.toml").unwrap().access_token[]);
     let torrent_name = getenv("TR_TORRENT_NAME").unwrap();
     let torrent_dir = getenv("TR_TORRENT_DIR").unwrap();
     let push = PushMsg {

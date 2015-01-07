@@ -10,25 +10,26 @@ name = "script-utils"
 [dependencies]
 url = "*"
 regex = "*"
+regex_macros = "*"
 rustc-serialize = "*"
+cookie = "*"
+openssl = "*"
 
-[dependencies.http]
-git = "https://github.com/kstep/rust-http.git"
+[dependencies.hyper]
+git = "https://github.com/hyperium/hyper.git"
 
 [dependencies.encoding]
-git = "https://github.com/kstep/rust-encoding.git"
+git = "https://github.com/lifthrasiir/rust-encoding.git"
 
 [dependencies.toml]
 git = "https://github.com/alexcrichton/toml-rs.git"
 
 [dependencies.xdg]
-git = "https://github.com/o11c/rust-xdg.git"
-
-[dependencies.curl]
-git = "https://github.com/kstep/curl-rust.git"
+git = "https://github.com/kstep/rust-xdg.git"
 
 [dependencies.pb]
 git = "https://github.com/kstep/rust-pb.git"
 
 [dependencies.xml-rs]
-git = "https://github.com/netvl/xml-rs.git"
+#git = "https://github.com/netvl/xml-rs.git"
+git = "https://github.com/bfops/xml-rs.git"

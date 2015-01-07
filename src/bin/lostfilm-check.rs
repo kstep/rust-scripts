@@ -5,7 +5,8 @@
 
 extern crate encoding;
 
-extern crate curl;
+extern crate hyper;
+extern crate cookie;
 extern crate url;
 extern crate regex;
 extern crate "rustc-serialize" as rustc_serialize;
@@ -19,6 +20,17 @@ extern crate regex_macros;
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
 
+use hyper::client::{Client, RedirectPolicy};
+use hyper::mime::Mime;
+use hyper::status::StatusCode;
+use hyper::header::common::content_type::ContentType;
+use hyper::header::common::user_agent::UserAgent;
+use hyper::header::common::cookie::Cookies;
+use hyper::header::common::set_cookie::SetCookie;
+use hyper::header::{Header, HeaderFormat};
+
+use cookie::{CookieJar, Cookie};
+
 use url::{Url, form_urlencoded};
 use xml::reader::EventReader;
 use xml::reader::events::XmlEvent;
@@ -26,6 +38,7 @@ use xml::name::OwnedName;
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::str::from_utf8;
+use std::fmt::Show;
 use pb::api::PbAPI;
 use pb::messages::{PushMsg, TargetIden};
 use pb::objects::{Push, PushData};
@@ -35,7 +48,6 @@ static TORRENTS_DIR: &'static str = ".";
 static TRANSMISSION_URL: &'static str = "http://localhost:9091/transmission/rpc";
 static BASE_URL: &'static str = "http://www.lostfilm.tv/";
 static LOGIN_URL: &'static str = "http://login1.bogi.ru/login.php";
-static COOKIE_JAR: &'static str = "/tmp/lostfilm.cookies";
 
 #[deriving(RustcDecodable)]
 struct Config {
@@ -50,7 +62,7 @@ struct PbConfig {
     access_token: String
 }
 
-fn notify(api: &PbAPI, title: &str, url: &str) {
+fn notify(api: &mut PbAPI, title: &str, url: &str) {
     println!("added torrent {}: {}",  title, url);
 
     let push = PushMsg {
@@ -66,22 +78,14 @@ fn notify(api: &PbAPI, title: &str, url: &str) {
     }
 }
 
-type Cookies = BTreeMap<String, String>;
-
 macro_rules! qs {
     ($($key:expr -> $value:expr),*) => {
         vec![$(($key, $value)),*]
     }
 }
 
-macro_rules! mime {
-    ($t:ident / $s:expr) => {
-        MediaType::new(stringify!($t).to_string(), $s.to_string(), vec![])
-    }
-}
-
 #[allow(unused_must_use)]
-fn login(login: &str, password: &str) {
+fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
     let mut url = Url::parse(LOGIN_URL).unwrap();
     url.set_query_from_pairs(vec![("referer", BASE_URL)].into_iter());
 
@@ -97,34 +101,39 @@ fn login(login: &str, password: &str) {
     let input_re = regex!("<input .*?name=\"(\\w+)\" .*?value=\"([^\"]*)\"");
     let action_re = regex!("action=\"([^\"]+)\"");
 
-    let cookie_jar = Path::new("/tmp/lostfilm.cookies");
+    let mut cookie_jar = CookieJar::new(b"3b53fc89707a78fae45eeafff931f054");
 
-    let body = curl::http::handle()
-        .cookies(&cookie_jar)
-        .post(url.to_string()[], data[])
-        .follow_redirects(true)
-        .content_type("application/x-www-form-urlencoded")
-        .verify_peer(false)
-        .header("User-Agent", USER_AGENT)
-        .header("Referer", BASE_URL)
-        .exec()
-        .unwrap()
-        .move_body();
+    let mut client = Client::new();
 
-    let decoded_body = WINDOWS_1251.decode(body[], DecoderTrap::Replace).unwrap();
+    client.set_redirect_policy(RedirectPolicy::FollowAll);
+    let mut response = client.post(url)
+        .body(data[])
+        .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
+        .header(UserAgent(USER_AGENT.to_string()))
+        .header(Referer(BASE_URL.to_string()))
+        .send()
+        .unwrap();
+
+    response.headers.get::<SetCookie>().unwrap().apply_to_cookie_jar(&mut cookie_jar);
+
+    let decoded_body = WINDOWS_1251.decode(response.read_to_end().unwrap()[], DecoderTrap::Replace).unwrap();
 
     let action = action_re.captures(decoded_body[]).unwrap().at(1).unwrap();
-    let form = form_urlencoded::serialize(input_re.captures_iter(decoded_body[]).map(|c| (c.at(1).unwrap(), c.at(2).unwrap())));
+    let form = form_urlencoded::serialize(input_re.captures_iter(decoded_body[]).map(|&: c| (c.at(1).unwrap(), c.at(2).unwrap())));
 
-    curl::http::handle()
-        .cookies(&cookie_jar)
-        .post(action, form[])
-        .follow_redirects(true)
-        .content_type("application/x-www-form-urlencoded")
-        .verify_peer(false)
-        .header("User-Agent", USER_AGENT)
-        .header("Referer", LOGIN_URL)
-        .exec();
+    client.set_redirect_policy(RedirectPolicy::FollowNone);
+    let mut response = client.post(action)
+        .body(form[])
+        .header(Cookies::from_cookie_jar(&cookie_jar))
+        .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
+        .header(UserAgent(USER_AGENT.to_string()))
+        .header(Referer(LOGIN_URL.to_string()))
+        .send()
+        .unwrap();
+
+    response.headers.get::<SetCookie>().unwrap().apply_to_cookie_jar(&mut cookie_jar);
+
+    cookie_jar
 }
 
 enum RssState {
@@ -135,14 +144,15 @@ enum RssState {
     InLink
 }
 
-fn get_torrent_urls(include: &[String], exclude: &[String]) -> Vec<(String, String)> {
+fn get_torrent_urls(cookie_jar: &CookieJar, include: &[String], exclude: &[String]) -> Vec<(String, String)> {
     let url = format!("{}{}", BASE_URL, "rssdd.xml");
-    let body = curl::http::handle()
+    let body = Client::new()
         .get(url[])
-        .header("User-Agent", USER_AGENT)
-        .exec()
+        .header(UserAgent(USER_AGENT.to_string()))
+        .send()
         .unwrap()
-        .move_body();
+        .read_to_end()
+        .unwrap();
 
     let decoded_body = WINDOWS_1251.decode(body[], DecoderTrap::Replace);
     let mut reader = EventReader::new_from_string(decoded_body.unwrap());
@@ -172,12 +182,13 @@ fn get_torrent_urls(include: &[String], exclude: &[String]) -> Vec<(String, Stri
                 RssState::InTitle => {
                     needed = include.iter().find(|v| value.contains(v[])).is_some()
                          && !exclude.iter().find(|v| value.contains(v[])).is_some();
+
                     if needed {
                         title = value.clone();
                     }
                 },
                 RssState::InLink if needed => {
-                    result.push((title.clone(), extract_torrent_link(value.replace("/download.php?", "/details.php?").rsplitn(1, '&').last().unwrap())));
+                    result.push((title.clone(), extract_torrent_link(cookie_jar, value.replace("/download.php?", "/details.php?").rsplitn(1, '&').last().unwrap())));
                 },
                 _ => ()
             },
@@ -188,69 +199,118 @@ fn get_torrent_urls(include: &[String], exclude: &[String]) -> Vec<(String, Stri
     result
 }
 
-fn extract_torrent_link(details_url: &str) -> String {
+fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
     let a_download_tag_re = regex!(r#"<a href="javascript:\{\};" onMouseOver="setCookie\('(\w+)','([a-f0-9]+)'\)" class="a_download" onClick="ShowAllReleases\('([0-9]+)','([0-9.]+)','([0-9]+)'\)"></a>"#);
     let torrent_link_re = regex!(r#"href="(http://tracktor\.in/td\.php\?s=[^"]+)""#);
+    
+    let mut client = Client::new();
+    client.set_redirect_policy(RedirectPolicy::FollowAll);
 
-    let cookie_jar = Path::new(COOKIE_JAR);
-    let body = curl::http::handle()
-        .cookies(&cookie_jar)
-        .get(details_url)
-        .header("User-Agent", USER_AGENT)
-        .header("Referer", BASE_URL)
-        .exec()
+    let body = client.get(details_url)
+        .header(Cookies::from_cookie_jar(cookie_jar))
+        .header(UserAgent(USER_AGENT.to_string()))
+        .header(Referer(BASE_URL.to_string()))
+        .send()
         .unwrap()
-        .move_body();
+        .read_to_end()
+        .unwrap();
+
     let decoded_body = WINDOWS_1251.decode(body[], DecoderTrap::Replace).unwrap();
 
     let a_download_tag = a_download_tag_re.captures(decoded_body[]).unwrap();
-    let (href, cookie) = (
+    let (href, cookie_name, cookie_value) = (
         format!("{}nrdr.php?c={}&s={}&e={}", BASE_URL, a_download_tag.at(3).unwrap(), a_download_tag.at(4).unwrap(), a_download_tag.at(5).unwrap()),
-        format!("Set-Cookie: {}_2={}", a_download_tag.at(1).unwrap(), a_download_tag.at(2).unwrap()));
+        format!("{}_2", a_download_tag.at(1).unwrap()),
+        a_download_tag.at(2).unwrap().to_string());
 
-    let body = curl::http::handle()
-        .cookies(&cookie_jar)
-        .cookie(cookie[])
-        .get(href[])
-        .follow_redirects(true)
-        .header("User-Agent", USER_AGENT)
-        .header("Referer", details_url)
-        .exec()
+    cookie_jar.add(Cookie::new(cookie_name, cookie_value));
+
+    let body = client.get(href[])
+        .header(Cookies::from_cookie_jar(cookie_jar))
+        .header(UserAgent(USER_AGENT.to_string()))
+        .header(Referer(details_url.to_string()))
+        .send()
         .unwrap()
-        .move_body();
+        .read_to_end()
+        .unwrap();
 
     let decoded_body = WINDOWS_1251.decode(body[], DecoderTrap::Replace).unwrap();
     torrent_link_re.captures(decoded_body[]).unwrap().at(1).unwrap().to_string()
 }
 
 struct TransmissionAPI {
-    token: String,
+    token: TransmissionSessionId,
     tag: uint
+}
+
+#[derive(Clone)]
+struct TransmissionSessionId(pub String);
+
+impl Header for TransmissionSessionId {
+    #[allow(unused_variables)]
+    fn header_name(marker: Option<Self>) -> &'static str {
+        "X-Transmission-Session-Id"
+    }
+
+    fn parse_header(raw: &[Vec<u8>]) -> Option<TransmissionSessionId> {
+        Some(TransmissionSessionId(String::from_utf8_lossy(raw[0][]).into_owned()))
+    }
+}
+
+impl HeaderFormat for TransmissionSessionId {
+    fn fmt_header(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let TransmissionSessionId(ref value) = *self;
+        value.fmt(fmt)
+    }
+}
+
+#[derive(Clone)]
+struct Referer(pub String);
+
+impl Header for Referer {
+    #[allow(unused_variables)]
+    fn header_name(marker: Option<Self>) -> &'static str {
+        "Referer"
+    }
+
+    fn parse_header(raw: &[Vec<u8>]) -> Option<Referer> {
+        Some(Referer(String::from_utf8_lossy(raw[0][]).into_owned()))
+    }
+}
+
+impl HeaderFormat for Referer {
+    fn fmt_header(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let Referer(ref value) = *self;
+        value.fmt(fmt)
+    }
 }
 
 impl TransmissionAPI {
     fn new() -> TransmissionAPI {
         TransmissionAPI {
-            token: "".to_string(),
+            token: TransmissionSessionId("".to_string()),
             tag: 0
         }
     }
 
     fn add_torrent(&mut self, url: &str) -> bool {
+        let mut client = Client::new();
+
         loop {
             self.tag = self.tag + 1;
-            let resp = curl::http::handle()
-                .post(TRANSMISSION_URL, format!(r#"{{"tag":"{}","method":"torrent-add","arguments":{{"filename":"{}"}}}}"#, self.tag, url)[])
-                .header("x-transmission-session-id", self.token[])
-                .exec()
+            let mut resp = client.post(TRANSMISSION_URL)
+                .body(format!(r#"{{"tag":"{}","method":"torrent-add","arguments":{{"filename":"{}"}}}}"#, self.tag, url)[])
+                .header(self.token.clone())
+                .header(ContentType("application/json".parse().unwrap()))
+                .send()
                 .unwrap();
 
-            match resp.get_code() {
-                200 => {
-                    return from_utf8(resp.get_body()).unwrap().contains("torrent-added");
+            match resp.status {
+                StatusCode::Ok => {
+                    return resp.read_to_string().unwrap().contains("torrent-added");
                 },
-                409 => {
-                    self.token = resp.get_header("x-transmission-session-id")[0].clone();
+                StatusCode::Conflict => {
+                    self.token = resp.headers.get::<TransmissionSessionId>().unwrap().clone();
                 },
                 code @ _ => {
                     panic!("unexpected error code {} for torrent {}", code, url);
@@ -262,15 +322,15 @@ impl TransmissionAPI {
 
 fn main() {
     let config: Config = utils::load_config("lostfilm/config.toml").unwrap();
-    login(config.username[], config.password[]);
+    let cookie_jar = login(config.username[], config.password[]);
 
-    let pbapi = PbAPI::new(utils::load_config::<PbConfig>("pushbullet/creds.toml").unwrap().access_token[]);
+    let mut pbapi = PbAPI::new(utils::load_config::<PbConfig>("pushbullet/creds.toml").unwrap().access_token[]);
     let mut trans = TransmissionAPI::new();
 
-    let urls = get_torrent_urls(config.include[], config.exclude[]);
+    let urls = get_torrent_urls(&cookie_jar, config.include[], config.exclude[]);
     for &(ref title, ref url) in urls.iter() {
         if trans.add_torrent(url[]) {
-            notify(&pbapi, title[], url[]);
+            notify(&mut pbapi, title[], url[]);
         }
     }
 }

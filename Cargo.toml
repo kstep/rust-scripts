@@ -31,5 +31,4 @@ git = "https://github.com/kstep/rust-xdg.git"
 git = "https://github.com/kstep/rust-pb.git"
 
 [dependencies.xml-rs]
-#git = "https://github.com/netvl/xml-rs.git"
-git = "https://github.com/bfops/xml-rs.git"
+git = "https://github.com/netvl/xml-rs.git"

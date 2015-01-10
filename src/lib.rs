@@ -14,7 +14,7 @@ pub fn load_config<C: Decodable>(filename: &str) -> Option<C> {
     XdgDirs::new().want_read_config(filename)
         .and_then(|ref p| File::open(p).ok())
         .and_then(|mut f| f.read_to_string().ok())
-        .and_then(|s| toml::decode_str(s[]))
+        .and_then(|s| toml::decode_str(&*s))
 }
 
 pub fn permissive_ssl_checker(p: bool, ctx: &openssl::x509::X509StoreContext) -> bool {

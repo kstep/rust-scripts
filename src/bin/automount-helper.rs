@@ -1,5 +1,6 @@
 #![feature(slicing_syntax)]
 #![feature(old_orphan_check)]
+#![allow(unstable)]
 
 extern crate "rustc-serialize" as serialize;
 extern crate collections;
@@ -40,7 +41,7 @@ fn systemd_encode(inp: &str) -> String {
             || b == ('_' as u8) { unsafe{ out.as_mut_vec().push(b); } }
         else {
             out.push_str(r"\x");
-            out.push_str(fmt::radix(b, 16).to_string()[]);
+            out.push_str(&*fmt::radix(b, 16).to_string());
         }
     }
     out
@@ -49,14 +50,14 @@ fn systemd_encode(inp: &str) -> String {
 fn main() {
     let mut name = automount_name();
 
-    while ismount(format!("/media/{}", name)[]) {
+    while ismount(&*format!("/media/{}", name)) {
         name = name + "_";
     }
 
     let service_name = format!("{} /media/{}", os::getenv("DEVNAME").unwrap(), name);
 
-    io::stdio::println(name[]);
-    io::stdio::println(systemd_encode(service_name[])[]);
+    io::stdio::println(&*name);
+    io::stdio::println(&*systemd_encode(&*service_name));
 }
 
 #[test]
@@ -69,8 +70,8 @@ fn test_ismount() {
 
 #[test]
 fn test_systemd_encode() {
-    assert_eq!(systemd_encode("hello_W0rld")[], "hello_W0rld");
-    assert_eq!(systemd_encode(r"/dev/sda1 /media/path")[], r"\x2fdev\x2fsda1\x20\x2fmedia\x2fpath");
+    assert_eq!(&*systemd_encode("hello_W0rld"), "hello_W0rld");
+    assert_eq!(&*systemd_encode(r"/dev/sda1 /media/path"), r"\x2fdev\x2fsda1\x20\x2fmedia\x2fpath");
 }
 
 #[test]
@@ -78,13 +79,13 @@ fn test_automount_name() {
     // TODO: how to fake os::args()?
     //os::setenv("ID_VENDOR", "Vendor");
     //os::setenv("ID_MODEL", "Model");
-    //assert_eq!(automount_name()[], "Vendor_Model_1");
+    //assert_eq!(&*automount_name(), "Vendor_Model_1");
 
     os::setenv("ID_FS_UUID", "UUID");
-    assert_eq!(automount_name()[], "UUID");
+    assert_eq!(&*automount_name(), "UUID");
 
     os::setenv("ID_FS_LABEL", "LABEL");
-    assert_eq!(automount_name()[], "LABEL");
+    assert_eq!(&*automount_name(), "LABEL");
 }
 
 #[bench]

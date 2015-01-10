@@ -1,6 +1,7 @@
-#![feature(phase)]
 #![feature(slicing_syntax)]
 #![feature(old_orphan_check)]
+#![feature(plugin)]
+#![allow(unstable)]
 
 #[cfg(test)]
 extern crate test;
@@ -10,32 +11,29 @@ extern crate hyper;
 extern crate url;
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate core;
-#[phase(plugin)]
+#[plugin]
 extern crate regex_macros;
 extern crate regex;
 extern crate "script-utils" as utils;
 
 use hyper::client::Client;
 use hyper::header::common::authorization::{Authorization, Basic};
-use rustc_serialize::base64::ToBase64;
-use rustc_serialize::base64::STANDARD;
-use url::Url;
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
 
 #[cfg(test)]
 use test::Bencher;
 
-#[deriving(Show)]
+#[derive(Show)]
 struct AcctInfo {
     enabled: bool,
-    account: int,
-    days: int,
-    price: int,
-    credit: Option<int>
+    account: i32,
+    days: i32,
+    price: i32,
+    credit: Option<i32>
 }
 
-#[deriving(RustcDecodable, Show)]
+#[derive(RustcDecodable, Show)]
 struct Creds {
     username: String,
     password: String
@@ -53,35 +51,23 @@ fn main() {
     let mut client = Client::new();
     client.set_ssl_verifier(utils::permissive_ssl_checker);
 
-    let cont = WINDOWS_1251.decode(client.get("https://www.adsl.by/001.htm")
+    let cont = WINDOWS_1251.decode(&*client.get("https://www.adsl.by/001.htm")
         .header(Authorization(Basic { username: config.username, password: Some(config.password) }))
         .send()
         .unwrap()
         .read_to_end()
-        .unwrap()[], DecoderTrap::Replace)
+        .unwrap(), DecoderTrap::Replace)
         .unwrap();
 
     let acct = AcctInfo {
-            enabled: state_re.is_match(cont[]),
-            account: account_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| v.replace(" ", "").parse())).unwrap_or(0),
-            days: days_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| v.parse())).unwrap_or(0),
-            price: price_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| v.parse())).unwrap_or(0),
-            credit: credit_re.captures(cont[]).and_then(|c| c.at(1).and_then(|v| v.parse()))
+            enabled: state_re.is_match(&*cont),
+            account: account_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.replace(" ", "").parse())).unwrap_or(0),
+            days: days_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse())).unwrap_or(0),
+            price: price_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse())).unwrap_or(0),
+            credit: credit_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse()))
         };
 
-    println!("{}", acct);
-}
-
-#[test]
-fn test_path_if_exists() {
-    match path_if_exists("/tmp") {
-        Some(p) => assert!(Path::new("/tmp").exists()),
-        None => assert!(!Path::new("/tmp").exists()),
-    }
-    match path_if_exists("/not-exists") {
-        Some(p) => assert!(Path::new("/not-exists").exists()),
-        None => assert!(!Path::new("/not-exists").exists()),
-    }
+    println!("{:?}", acct);
 }
 
 #[bench]
@@ -90,18 +76,4 @@ fn bench_main(b: &mut Bencher) {
     b.iter(|| {
         main()
     });
-}
-
-#[bench]
-fn bench_path_if_exists(b: &mut Bencher) {
-    b.iter(|| {
-        path_if_exists("/tmp")
-    })
-}
-
-#[bench]
-fn bench_path_if_not_exists(b: &mut Bencher) {
-    b.iter(|| {
-        path_if_exists("/not-exists")
-    })
 }

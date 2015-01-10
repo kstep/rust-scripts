@@ -109,11 +109,11 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
         .send()
         .unwrap();
 
-    response.headers.get::<SetCookie>().unwrap().apply_to_cookie_jar(&mut cookie_jar);
+    response.headers.get::<SetCookie>().expect("no login cookies").apply_to_cookie_jar(&mut cookie_jar);
 
     let decoded_body = WINDOWS_1251.decode(&*response.read_to_end().unwrap(), DecoderTrap::Replace).unwrap();
 
-    let action = action_re.captures(&*decoded_body).unwrap().at(1).unwrap();
+    let action = action_re.captures(&*decoded_body).expect("no action URL found in login form").at(1).unwrap();
     let form = form_urlencoded::serialize(input_re.captures_iter(&*decoded_body).map(|&: c| (c.at(1).unwrap(), c.at(2).unwrap())));
 
     client.set_redirect_policy(RedirectPolicy::FollowNone);
@@ -126,7 +126,7 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
         .send()
         .unwrap();
 
-    response.headers.get::<SetCookie>().unwrap().apply_to_cookie_jar(&mut cookie_jar);
+    response.headers.get::<SetCookie>().expect("not session cookies").apply_to_cookie_jar(&mut cookie_jar);
 
     cookie_jar
 }
@@ -183,7 +183,7 @@ fn get_torrent_urls(cookie_jar: &CookieJar, include: &[String], exclude: &[Strin
                     }
                 },
                 RssState::InLink if needed => {
-                    result.push((title.clone(), extract_torrent_link(cookie_jar, value.replace("/download.php?", "/details.php?").rsplitn(1, '&').last().unwrap())));
+                    result.push((title.clone(), extract_torrent_link(cookie_jar, value.replace("/download.php?", "/details.php?").rsplitn(1, '&').last().expect("torrent URL parse failed"))));
                 },
                 _ => ()
             },
@@ -316,7 +316,7 @@ impl TransmissionAPI {
 }
 
 fn main() {
-    let config: Config = utils::load_config("lostfilm/config.toml").unwrap();
+    let config: Config = utils::load_config("lostfilm/config.toml").expect("config file missing");
     let cookie_jar = login(&*config.username, &*config.password);
 
     let mut pbapi = PbAPI::new(&*utils::load_config::<PbConfig>("pushbullet/creds.toml").unwrap().access_token);

@@ -255,7 +255,7 @@ impl Header for TransmissionSessionId {
 impl HeaderFormat for TransmissionSessionId {
     fn fmt_header(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         let TransmissionSessionId(ref value) = *self;
-        value.fmt(fmt)
+        fmt.write_str(&**value)
     }
 }
 
@@ -283,7 +283,7 @@ impl HeaderFormat for Referer {
 impl TransmissionAPI {
     pub fn new() -> TransmissionAPI {
         TransmissionAPI {
-            token: TransmissionSessionId("".to_string()),
+            token: TransmissionSessionId(String::new()),
             tag: 0
         }
     }

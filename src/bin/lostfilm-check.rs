@@ -319,7 +319,7 @@ fn main() {
     let config: Config = utils::load_config("lostfilm/config.toml").expect("config file missing");
     let cookie_jar = login(&*config.username, &*config.password);
 
-    let mut pbapi = PbAPI::new(&*utils::load_config::<PbConfig>("pushbullet/creds.toml").unwrap().access_token);
+    let mut pbapi = PbAPI::new(&*utils::load_config::<PbConfig>("pushbullet/creds.toml").expect("pushbullet config file missing").access_token);
     let mut trans = TransmissionAPI::new();
 
     let urls = get_torrent_urls(&cookie_jar, &*config.include, &*config.exclude);

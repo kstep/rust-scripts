@@ -276,7 +276,7 @@ impl Header for Referer {
 impl HeaderFormat for Referer {
     fn fmt_header(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         let Referer(ref value) = *self;
-        value.fmt(fmt)
+        fmt.write_str(&**value)
     }
 }
 

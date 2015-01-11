@@ -1,5 +1,4 @@
 #![feature(slicing_syntax)]
-#![feature(old_orphan_check)]
 #![allow(unstable)]
 
 extern crate "rustc-serialize" as serialize;

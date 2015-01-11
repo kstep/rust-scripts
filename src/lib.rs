@@ -1,5 +1,5 @@
 #![feature(slicing_syntax)]
-#![feature(old_orphan_check)]
+#![allow(unstable)]
 
 extern crate xdg;
 extern crate toml;
@@ -17,6 +17,7 @@ pub fn load_config<C: Decodable>(filename: &str) -> Option<C> {
         .and_then(|s| toml::decode_str(&*s))
 }
 
+#[allow(unused_variables)]
 pub fn permissive_ssl_checker(p: bool, ctx: &openssl::x509::X509StoreContext) -> bool {
     true
 }

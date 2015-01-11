@@ -320,9 +320,9 @@ fn main() {
     let mut trans = TransmissionAPI::new();
 
     let urls = get_torrent_urls(&cookie_jar, &*config.include, &*config.exclude);
-    for &(ref title, ref url) in urls.iter() {
-        if trans.add_torrent(&**url, download_dir) {
-            notify(&mut pbapi, &**title, &**url);
+    for (title, url) in urls.into_iter() {
+        if trans.add_torrent(&*url, download_dir) {
+            notify(&mut pbapi, &*title, &*url);
         }
     }
 }

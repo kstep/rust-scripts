@@ -19,6 +19,7 @@ use hyper::client::Client;
 use hyper::header::common::authorization::{Authorization, Basic};
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
+use std::fmt;
 
 #[cfg(test)]
 use test::Bencher;
@@ -30,6 +31,19 @@ struct AcctInfo {
     days: i32,
     price: i32,
     credit: Option<i32>
+}
+
+impl fmt::String for AcctInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(writeln!(f, "Enabled: {}", self.enabled));
+        try!(writeln!(f, "Account: {} rub", self.account));
+        try!(writeln!(f, "Days left: {}", self.days));
+        try!(writeln!(f, "Price per Mib: {} rub", self.price));
+        if let Some(ref c) = self.credit {
+            try!(writeln!(f, "Allowed credit: {}%", c));
+        }
+        Ok(())
+    }
 }
 
 #[derive(RustcDecodable, Show)]
@@ -66,7 +80,7 @@ fn main() {
             credit: credit_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse()))
         };
 
-    println!("{:?}", acct);
+    println!("{}", acct);
 }
 
 #[bench]

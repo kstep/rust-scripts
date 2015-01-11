@@ -35,7 +35,6 @@ use xml::name::OwnedName;
 use pb::{PbAPI, PushMsg, TargetIden, Push, PushData};
 
 static USER_AGENT: &'static str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36";
-static TORRENTS_DIR: &'static str = ".";
 static TRANSMISSION_URL: &'static str = "http://localhost:9091/transmission/rpc";
 static BASE_URL: &'static str = "http://www.lostfilm.tv/";
 static LOGIN_URL: &'static str = "http://login1.bogi.ru/login.php";
@@ -45,7 +44,8 @@ struct Config {
     include: Vec<String>,
     exclude: Vec<String>,
     username: String,
-    password: String
+    password: String,
+    download_dir: Option<String>
 }
 
 #[derive(RustcDecodable)]
@@ -284,13 +284,13 @@ impl TransmissionAPI {
         }
     }
 
-    pub fn add_torrent(&mut self, url: &str) -> bool {
+    pub fn add_torrent(&mut self, url: &str, download_dir: Option<&str>) -> bool {
         let mut client = Client::new();
 
         loop {
             self.tag = self.tag + 1;
             let mut resp = client.post(TRANSMISSION_URL)
-                .body(&*format!(r#"{{"tag":"{}","method":"torrent-add","arguments":{{"filename":"{}"}}}}"#, self.tag, url))
+                .body(&*format!(r#"{{"tag":"{}","method":"torrent-add","arguments":{{"filename":"{}","download-dir":"{}"}}}}"#, self.tag, url, download_dir.unwrap_or("")))
                 .header(self.token.clone())
                 .header(ContentType("application/json".parse().unwrap()))
                 .send()
@@ -314,13 +314,14 @@ impl TransmissionAPI {
 fn main() {
     let config: Config = utils::load_config("lostfilm/config.toml").expect("config file missing");
     let cookie_jar = login(&*config.username, &*config.password);
+    let download_dir = config.download_dir.as_ref().map(|v| &**v);
 
     let mut pbapi = PbAPI::new(&*utils::load_config::<PbConfig>("pushbullet/creds.toml").expect("pushbullet config file missing").access_token);
     let mut trans = TransmissionAPI::new();
 
     let urls = get_torrent_urls(&cookie_jar, &*config.include, &*config.exclude);
     for &(ref title, ref url) in urls.iter() {
-        if trans.add_torrent(&**url) {
+        if trans.add_torrent(&**url, download_dir) {
             notify(&mut pbapi, &**title, &**url);
         }
     }

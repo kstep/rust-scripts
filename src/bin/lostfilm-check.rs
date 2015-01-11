@@ -33,10 +33,7 @@ use url::{Url, form_urlencoded};
 use xml::reader::EventReader;
 use xml::reader::events::XmlEvent;
 use xml::name::OwnedName;
-use std::fmt::Show;
-use pb::api::PbAPI;
-use pb::messages::{PushMsg, TargetIden};
-use pb::objects::{Push, PushData};
+use pb::{PbAPI, PushMsg, TargetIden, Push, PushData};
 
 static USER_AGENT: &'static str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36";
 static TORRENTS_DIR: &'static str = ".";

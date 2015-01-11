@@ -4,9 +4,9 @@ version = "0.0.1"
 dependencies = [
  "cookie 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "encoding 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "hyper 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hyper 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
- "pb 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pb 0.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex_macros 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -91,7 +91,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "hyper"
-version = "0.0.21"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cookie 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -101,7 +101,7 @@ dependencies = [
  "openssl 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "typeable 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicase 0.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "unsafe-any 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -159,10 +159,10 @@ dependencies = [
 
 [[package]]
 name = "pb"
-version = "0.0.1"
+version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "hyper 0.0.21 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hyper 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -212,8 +212,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "typeable"
-version = "0.0.6"
+name = "unicase"
+version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -233,7 +233,7 @@ dependencies = [
 [[package]]
 name = "xdg"
 version = "0.1.0"
-source = "git+https://github.com/kstep/rust-xdg.git#7ddd3347e674e5949781c5dbad1d9cd08548fd9f"
+source = "git+https://github.com/kstep/rust-xdg.git#34f01d7c39fdedd54b9526abce308866be843065"
 
 [[package]]
 name = "xml-rs"

@@ -6,9 +6,7 @@ extern crate pb;
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate "script-utils" as utils;
 
-use pb::api::PbAPI;
-use pb::messages::{PushMsg, TargetIden};
-use pb::objects::{Push, PushData};
+use pb::{PbAPI, PushMsg, TargetIden, Push, PushData};
 use std::os::getenv;
 
 #[derive(RustcDecodable)]

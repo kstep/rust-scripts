@@ -19,6 +19,7 @@ encoding = "*"
 toml = "*"
 pb = "*"
 xml-rs = "*"
+time = "*"
 
 [dependencies.xdg]
 git = "https://github.com/kstep/rust-xdg.git"

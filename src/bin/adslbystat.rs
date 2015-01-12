@@ -20,6 +20,7 @@ use hyper::header::common::authorization::{Authorization, Basic};
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
 use std::fmt;
+use std::os::set_exit_status;
 
 #[cfg(test)]
 use test::Bencher;
@@ -81,6 +82,7 @@ fn main() {
         };
 
     println!("{}", acct);
+    set_exit_status(if acct.enabled { 0 } else { 1 });
 }
 
 #[bench]

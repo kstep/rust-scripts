@@ -57,8 +57,8 @@ fn notify(api: &mut PbAPI, title: &str, url: &str) {
     println!("added torrent {}: {}",  title, url);
 
     let push = PushMsg {
-        title: Some(format!("New LostFilm release: {}", title)),
-        body: None,
+        title: Some("New LostFilm release".to_string()),
+        body: Some(title.to_string()),
         target: TargetIden::CurrentUser,
         data: PushData::Link(Url::parse(url).ok()),
         source_device_iden: None

@@ -8,12 +8,15 @@ extern crate hyper;
 extern crate cookie;
 extern crate url;
 #[plugin]
+#[no_link]
 extern crate regex_macros;
 extern crate regex;
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate "script-utils" as utils;
 extern crate xml;
 extern crate pb;
+#[macro_use]
+extern crate log;
 
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
@@ -28,7 +31,7 @@ use hyper::header::{Header, HeaderFormat};
 
 use cookie::{CookieJar, Cookie};
 
-use url::{Url, form_urlencoded};
+use url::{Url, UrlParser, form_urlencoded};
 use xml::reader::EventReader;
 use xml::reader::events::XmlEvent;
 use xml::name::OwnedName;
@@ -77,7 +80,11 @@ macro_rules! qs {
 
 #[allow(unused_must_use)]
 fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
-    let mut url = Url::parse(LOGIN_URL).unwrap();
+    let base_url = Url::parse(BASE_URL).unwrap();
+    let mut parser = UrlParser::new();
+    parser.base_url(&base_url);
+
+    let mut url = parser.parse(LOGIN_URL).unwrap();
     url.set_query_from_pairs(vec![("referer", BASE_URL)].into_iter());
 
     let data = form_urlencoded::serialize(qs![
@@ -109,7 +116,7 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
 
     let decoded_body = WINDOWS_1251.decode(&*response.read_to_end().unwrap(), DecoderTrap::Replace).unwrap();
 
-    let action = action_re.captures(&*decoded_body).expect("no action URL found in login form").at(1).unwrap();
+    let action = parser.parse(action_re.captures(&*decoded_body).expect("no action URL found in login form").at(1).unwrap()).unwrap();
     let form = form_urlencoded::serialize(input_re.captures_iter(&*decoded_body).map(|&: c| (c.at(1).unwrap(), c.at(2).unwrap())));
 
     client.set_redirect_policy(RedirectPolicy::FollowNone);

@@ -10,6 +10,7 @@ dependencies = [
  "regex 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex_macros 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.1.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "xdg 0.1.0 (git+https://github.com/kstep/rust-xdg.git)",

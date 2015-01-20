@@ -8,6 +8,7 @@ dependencies = [
  "inotify 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "pb 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pocket 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex_macros 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -188,6 +189,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "pnacl-build-helper"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "pocket"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "hyper 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mime 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 0.2.16 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "regex"

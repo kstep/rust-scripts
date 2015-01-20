@@ -21,6 +21,7 @@ pb = "*"
 xml-rs = "*"
 time = "*"
 inotify = "*"
+pocket = "*"
 
 [dependencies.xdg]
 git = "https://github.com/kstep/rust-xdg.git"

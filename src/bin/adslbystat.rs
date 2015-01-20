@@ -11,6 +11,7 @@ extern crate url;
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate core;
 #[plugin]
+#[no_link]
 extern crate regex_macros;
 extern crate regex;
 extern crate "script-utils" as utils;

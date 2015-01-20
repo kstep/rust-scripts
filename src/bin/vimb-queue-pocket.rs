@@ -29,7 +29,7 @@ fn main() {
     let mut inotify = INotify::init().unwrap();
     inotify.add_watch(&queue, ffi::IN_CLOSE_WRITE).unwrap();
 
-    println!("watching for {} for changes...", queue.display());
+    println!("watching {} for changes...", queue.display());
     loop {
         inotify.wait_for_events().unwrap();
         let mut reader = BufferedReader::new(File::open(&queue).unwrap());

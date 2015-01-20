@@ -64,7 +64,7 @@ fn main() {
     let config: Creds = utils::load_config("adslby/creds.toml").expect("config file load error");
 
     let mut client = Client::new();
-    client.set_ssl_verifier(utils::permissive_ssl_checker);
+    client.set_ssl_verifier(Box::new(utils::permissive_ssl_checker));
 
     let cont = WINDOWS_1251.decode(&*client.get("https://www.adsl.by/001.htm")
         .header(Authorization(Basic { username: config.username, password: Some(config.password) }))

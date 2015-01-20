@@ -20,6 +20,7 @@ toml = "*"
 pb = "*"
 xml-rs = "*"
 time = "*"
+inotify = "*"
 
 [dependencies.xdg]
 git = "https://github.com/kstep/rust-xdg.git"

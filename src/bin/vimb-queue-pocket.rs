@@ -1,4 +1,4 @@
-#![allow(unstable)]
+#![feature(io)]
 
 extern crate pocket;
 extern crate inotify;
@@ -8,8 +8,8 @@ extern crate "rustc-serialize" as rustc_serialize;
 
 use pocket::Pocket;
 use inotify::{INotify, ffi};
-use std::io::fs::File;
-use std::io::BufferedReader;
+use std::old_io::fs::File;
+use std::old_io::BufferedReader;
 use xdg::XdgDirs;
 
 #[derive(RustcDecodable)]
@@ -34,7 +34,7 @@ fn main() {
         inotify.wait_for_events().unwrap();
         let mut reader = BufferedReader::new(File::open(&queue).unwrap());
         for line in reader.lines() {
-            match pocket.add(&*line.unwrap().trim()) {
+            match pocket.push(&*line.unwrap().trim()) {
                 Ok(item) => println!("added url {}", item.given_url),
                 Err(err) => println!("error: {:?}", err)
             }

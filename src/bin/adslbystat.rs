@@ -1,6 +1,6 @@
 #![feature(slicing_syntax)]
 #![feature(plugin)]
-#![allow(unstable)]
+#![feature(core, io, collections, os)]
 
 #[cfg(test)]
 extern crate test;
@@ -17,7 +17,7 @@ extern crate regex;
 extern crate "script-utils" as utils;
 
 use hyper::client::Client;
-use hyper::header::common::authorization::{Authorization, Basic};
+use hyper::header::{Authorization, Basic};
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
 use std::fmt;
@@ -26,7 +26,7 @@ use std::os::set_exit_status;
 #[cfg(test)]
 use test::Bencher;
 
-#[derive(Show)]
+#[derive(Debug)]
 struct AcctInfo {
     enabled: bool,
     account: i32,
@@ -35,7 +35,7 @@ struct AcctInfo {
     credit: Option<i32>
 }
 
-impl fmt::String for AcctInfo {
+impl fmt::Display for AcctInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(writeln!(f, "Enabled: {}", self.enabled));
         try!(writeln!(f, "Account: {} rub", self.account));
@@ -48,7 +48,7 @@ impl fmt::String for AcctInfo {
     }
 }
 
-#[derive(RustcDecodable, Show)]
+#[derive(RustcDecodable, Debug)]
 struct Creds {
     username: String,
     password: String

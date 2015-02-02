@@ -1,5 +1,5 @@
 #![feature(slicing_syntax)]
-#![allow(unstable)]
+#![feature(collections, io, os, path, core)]
 
 extern crate "rustc-serialize" as serialize;
 extern crate collections;
@@ -7,9 +7,9 @@ extern crate collections;
 #[cfg(test)]
 extern crate test;
 
-use std::io::fs::PathExtensions;
+use std::old_io::fs::PathExtensions;
 use std::os;
-use std::io;
+use std::old_io as io;
 use std::fmt;
 
 #[cfg(test)]

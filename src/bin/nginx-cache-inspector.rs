@@ -1,10 +1,10 @@
 #![feature(slicing_syntax)]
-#![allow(unstable)]
+#![feature(os, path, io, os)]
 
 extern crate url;
 
-use std::io::fs::{PathExtensions, File, walk_dir};
-use std::io::BufferedReader;
+use std::old_io::fs::{PathExtensions, File, walk_dir};
+use std::old_io::BufferedReader;
 use std::os;
 use url::Url;
 

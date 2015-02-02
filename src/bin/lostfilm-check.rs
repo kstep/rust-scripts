@@ -1,6 +1,6 @@
 #![feature(slicing_syntax)]
 #![feature(plugin)]
-#![allow(unstable)]
+#![feature(io, core, collections, rustc_private)]
 
 extern crate encoding;
 
@@ -23,13 +23,11 @@ use encoding::all::WINDOWS_1251;
 
 use hyper::client::{Client, RedirectPolicy};
 use hyper::status::StatusCode;
-use hyper::header::common::content_type::ContentType;
-use hyper::header::common::user_agent::UserAgent;
-use hyper::header::common::cookie::Cookies;
-use hyper::header::common::set_cookie::SetCookie;
+use hyper::header::{ContentType, UserAgent, Cookie, SetCookie};
 use hyper::header::{Header, HeaderFormat};
 
-use cookie::{CookieJar, Cookie};
+use cookie::CookieJar;
+use cookie::Cookie as CookiePair;
 
 use url::{Url, UrlParser, form_urlencoded};
 use xml::reader::EventReader;
@@ -122,7 +120,7 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
     client.set_redirect_policy(RedirectPolicy::FollowNone);
     let response = client.post(action)
         .body(&*form)
-        .header(Cookies::from_cookie_jar(&cookie_jar))
+        .header(Cookie::from_cookie_jar(&cookie_jar))
         .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
         .header(UserAgent(USER_AGENT.to_string()))
         .header(Referer(LOGIN_URL.to_string()))
@@ -205,7 +203,7 @@ fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
     client.set_redirect_policy(RedirectPolicy::FollowAll);
 
     let body = client.get(details_url)
-        .header(Cookies::from_cookie_jar(cookie_jar))
+        .header(Cookie::from_cookie_jar(cookie_jar))
         .header(UserAgent(USER_AGENT.to_string()))
         .header(Referer(BASE_URL.to_string()))
         .send()
@@ -221,10 +219,10 @@ fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
         format!("{}_2", a_download_tag.at(1).unwrap()),
         a_download_tag.at(2).unwrap().to_string());
 
-    cookie_jar.add(Cookie::new(cookie_name, cookie_value));
+    cookie_jar.add(CookiePair::new(cookie_name, cookie_value));
 
     let body = client.get(&*href)
-        .header(Cookies::from_cookie_jar(cookie_jar))
+        .header(Cookie::from_cookie_jar(cookie_jar))
         .header(UserAgent(USER_AGENT.to_string()))
         .header(Referer(details_url.to_string()))
         .send()
@@ -246,7 +244,7 @@ struct TransmissionSessionId(pub String);
 
 impl Header for TransmissionSessionId {
     #[allow(unused_variables)]
-    fn header_name(marker: Option<Self>) -> &'static str {
+    fn header_name() -> &'static str {
         "X-Transmission-Session-Id"
     }
 
@@ -267,7 +265,7 @@ struct Referer(pub String);
 
 impl Header for Referer {
     #[allow(unused_variables)]
-    fn header_name(marker: Option<Self>) -> &'static str {
+    fn header_name() -> &'static str {
         "Referer"
     }
 

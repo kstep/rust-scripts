@@ -1,5 +1,5 @@
 #![feature(slicing_syntax)]
-#![allow(unstable)]
+#![feature(os, collections)]
 
 extern crate pb;
 extern crate "rustc-serialize" as rustc_serialize;

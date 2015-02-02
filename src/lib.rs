@@ -1,5 +1,5 @@
 #![feature(slicing_syntax)]
-#![allow(unstable)]
+#![feature(io)]
 
 extern crate xdg;
 extern crate toml;
@@ -7,7 +7,7 @@ extern crate "rustc-serialize" as rustc_serialize;
 extern crate openssl;
 
 use rustc_serialize::Decodable;
-use std::io::File;
+use std::old_io::File;
 use xdg::XdgDirs;
 
 pub fn load_config<C: Decodable>(filename: &str) -> Option<C> {

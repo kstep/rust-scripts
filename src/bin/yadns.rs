@@ -1,4 +1,4 @@
-#![allow(unstable)]
+#![feature(collections)]
 
 extern crate xml;
 extern crate pb;
@@ -7,7 +7,9 @@ extern crate "script-utils" as utils;
 extern crate url;
 extern crate time;
 
+use std::old_io::net::ip::IpAddr;
 use hyper::{Client, HttpResult};
+use hyper::net::HttpConnector;
 use url::form_urlencoded;
 use xml::reader::EventReader;
 use xml::reader::events::XmlEvent;
@@ -23,11 +25,6 @@ struct PbConfig {
     access_token: String
 }
 
-struct NSRecord {
-    kind: String,
-    subdomain: String
-}
-
 static BASE_URL: &'static str = "https://pddimp.yandex.ru/nsapi/";
 
 macro_rules! qs {
@@ -37,27 +34,30 @@ macro_rules! qs {
 }
 
 
-struct YandexDNS {
+struct YandexDNS<'a> {
     id: String,
     domain: String,
     token: String,
-    client: Client
+    client: Client<HttpConnector<'a>>
 }
 
-impl YandexDNS {
-    pub fn new(domain: &str, token: &str) -> YandexDNS {
+impl<'a> YandexDNS<'a> {
+    pub fn new(domain: &str, token: &str) -> YandexDNS<'a> {
         YandexDNS {
+            id: "".to_string(),
             domain: domain.to_string(),
             token: token.to_string(),
             client: Client::new()
         }
     }
 
-    fn call(method: &str, args: &[(&str, &str)]) -> HttpResult<()> {
-        client.get(format!("https://pddimp.yandex.ru/nsapi/{}.xml?{}", method, form_urlencoded::serialize(args)))
+    fn call(&mut self, method: &str, args: &[(&str, &str)]) -> HttpResult<()> {
+        self.client.get(&*format!("https://pddimp.yandex.ru/nsapi/{}.xml?{}", method, form_urlencoded::serialize(args.iter().map(|v| *v))));
+        Ok(())
     }
 
     pub fn load(&mut self) -> HttpResult<Vec<NSRecord>> {
+        Ok(vec![]) // FIXME: stub
     }
 }
 
@@ -93,16 +93,21 @@ struct NSRecord {
     data: NSData,
 }
 
-trait FromXml {
-    fn from_xml(event: &XmlEvent, reader: &mut EventReader) -> Option<Self>;
+trait FromXml<T> {
+    fn from_xml(event: &XmlEvent, reader: &mut EventReader<T>) -> Option<Self>;
 }
 
-impl FromXml for NSData {
-    fn from_xml(event: &XmlEvent, reader: &mut EventReader) -> Option<NSData> {
+impl<T> FromXml<T> for NSData {
+    fn from_xml(event: &XmlEvent, reader: &mut EventReader<T>) -> Option<NSData> {
+        None // FIXME: stub
     }
 }
 
-/**
+fn main() {
+    println!("Hello, world");
+}
+
+/*
 <?xml version="1.0" encoding="utf-8"?>
 <page>
 
@@ -132,4 +137,4 @@ impl FromXml for NSData {
         <error>ok</error>
     </domains>
 </page>
-**/
+*/

@@ -78,6 +78,7 @@ macro_rules! qs {
 
 #[allow(unused_must_use)]
 fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
+    debug!("trying to login as {}...", login);
     let base_url = Url::parse(BASE_URL).unwrap();
     let mut parser = UrlParser::new();
     parser.base_url(&base_url);
@@ -101,6 +102,7 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
 
     let mut client = Client::new();
 
+    debug!("running first stage...");
     client.set_redirect_policy(RedirectPolicy::FollowAll);
     let mut response = client.post(url)
         .body(&*data)
@@ -116,7 +118,9 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
 
     let action = parser.parse(action_re.captures(&*decoded_body).expect("no action URL found in login form").at(1).unwrap()).unwrap();
     let form = form_urlencoded::serialize(input_re.captures_iter(&*decoded_body).map(|&: c| (c.at(1).unwrap(), c.at(2).unwrap())));
+    debug!("got second stage form: {} {:?}", action, form);
 
+    debug!("running second stage...");
     client.set_redirect_policy(RedirectPolicy::FollowNone);
     let response = client.post(action)
         .body(&*form)
@@ -128,6 +132,7 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
         .unwrap();
 
     response.headers.get::<SetCookie>().expect("not session cookies").apply_to_cookie_jar(&mut cookie_jar);
+    debug!("logged in as {}", login);
 
     cookie_jar
 }
@@ -141,7 +146,10 @@ enum RssState {
 }
 
 fn get_torrent_urls(cookie_jar: &CookieJar, include: &[String], exclude: &[String]) -> Vec<(String, String)> {
+    debug!("trying to get RSS feed...");
     let url = format!("{}{}", BASE_URL, "rssdd.xml");
+
+    debug!("sending request...");
     let body = Client::new()
         .get(&*url)
         .header(UserAgent(USER_AGENT.to_string()))
@@ -150,6 +158,7 @@ fn get_torrent_urls(cookie_jar: &CookieJar, include: &[String], exclude: &[Strin
         .read_to_end()
         .unwrap();
 
+    debug!("parsing response...");
     let decoded_body = WINDOWS_1251.decode(&*body, DecoderTrap::Replace);
     let mut reader = EventReader::new_from_string(decoded_body.unwrap());
 
@@ -192,16 +201,19 @@ fn get_torrent_urls(cookie_jar: &CookieJar, include: &[String], exclude: &[Strin
         }
     }
 
+    debug!("feed parsed for {} links: {:?}", result.len(), result);
     result
 }
 
 fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
+    debug!("extracting torrent link for {}", details_url);
     let a_download_tag_re = regex!(r#"<a href="javascript:\{\};" onMouseOver="setCookie\('(\w+)','([a-f0-9]+)'\)" class="a_download" onClick="ShowAllReleases\('([0-9]+)','([0-9.]+)','([0-9]+)'\)"></a>"#);
     let torrent_link_re = regex!(r#"href="(http://tracktor\.in/td\.php\?s=[^"]+)""#);
     
     let mut client = Client::new();
     client.set_redirect_policy(RedirectPolicy::FollowAll);
 
+    debug!("fetching details page...");
     let body = client.get(details_url)
         .header(Cookie::from_cookie_jar(cookie_jar))
         .header(UserAgent(USER_AGENT.to_string()))
@@ -211,6 +223,7 @@ fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
         .read_to_end()
         .unwrap();
 
+    debug!("parsing details page...");
     let decoded_body = WINDOWS_1251.decode(&*body, DecoderTrap::Replace).unwrap();
 
     let a_download_tag = a_download_tag_re.captures(&*decoded_body).unwrap();
@@ -221,6 +234,7 @@ fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
 
     cookie_jar.add(CookiePair::new(cookie_name, cookie_value));
 
+    debug!("fetching tracker page...");
     let body = client.get(&*href)
         .header(Cookie::from_cookie_jar(cookie_jar))
         .header(UserAgent(USER_AGENT.to_string()))
@@ -230,6 +244,7 @@ fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
         .read_to_end()
         .unwrap();
 
+    debug!("parsing tracker page...");
     let decoded_body = WINDOWS_1251.decode(&*body, DecoderTrap::Replace).unwrap();
     torrent_link_re.captures(&*decoded_body).unwrap().at(1).unwrap().to_string()
 }
@@ -290,10 +305,13 @@ impl TransmissionAPI {
     }
 
     pub fn add_torrent(&mut self, url: &str, download_dir: Option<&str>) -> bool {
+        debug!("adding {} ({:?}) to torrents queue", url, download_dir);
         let mut client = Client::new();
 
         loop {
             self.tag = self.tag + 1;
+            debug!("sending request with tag {}...", self.tag);
+
             let mut resp = client.post(TRANSMISSION_URL)
                 .body(&*format!(r#"{{"tag":"{}","method":"torrent-add","arguments":{{"filename":"{}","download-dir":"{}"}}}}"#, self.tag, url, download_dir.unwrap_or("")))
                 .header(self.token.clone())
@@ -303,9 +321,11 @@ impl TransmissionAPI {
 
             match resp.status {
                 StatusCode::Ok => {
+                    debug!("torrent added");
                     return resp.read_to_string().unwrap().contains("torrent-added");
                 },
                 StatusCode::Conflict => {
+                    debug!("session id update");
                     self.token = resp.headers.get::<TransmissionSessionId>().unwrap().clone();
                 },
                 code @ _ => {
@@ -317,17 +337,26 @@ impl TransmissionAPI {
 }
 
 fn main() {
+    debug!("1. loading configs...");
     let config: Config = utils::load_config("lostfilm/config.toml").expect("config file missing");
-    let cookie_jar = login(&*config.username, &*config.password);
     let download_dir = config.download_dir.as_ref().map(|v| &**v);
 
+    debug!("2. initializing api objects...");
     let mut pbapi = PbAPI::new(&*utils::load_config::<PbConfig>("pushbullet/creds.toml").expect("pushbullet config file missing").access_token);
     let mut trans = TransmissionAPI::new();
 
+    debug!("3. logging in to lostfilm.tv...");
+    let cookie_jar = login(&*config.username, &*config.password);
+
+    debug!("4. checking lostfilm.tv for new shows...");
     let urls = get_torrent_urls(&cookie_jar, &*config.include, &*config.exclude);
+
+    debug!("5. adding found torrents to transmission...");
     for (title, url) in urls.into_iter() {
         if trans.add_torrent(&*url, download_dir) {
             notify(&mut pbapi, &*title, &*url);
         }
     }
+
+    debug!("all done!");
 }

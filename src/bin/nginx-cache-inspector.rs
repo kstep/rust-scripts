@@ -3,9 +3,10 @@
 
 extern crate url;
 
-use std::old_io::fs::{PathExtensions, File, walk_dir};
-use std::old_io::BufferedReader;
-use std::os;
+use std::path::Path;
+use std::fs::{File, walk_dir};
+use std::io::BufReader;
+use std::env;
 use url::Url;
 
 #[allow(dead_code)]
@@ -24,10 +25,10 @@ impl NginxCacheHeader {
 }
 
 fn main() {
-    let args = os::args();
+    let args : Vec<String> = env::args().collect();
     let root = Path::new(if args.len() < 2 { "/var/lib/nginx/cache" } else { &*args[1] });
     let mut files = walk_dir(&root).unwrap_or_else(|e| panic!("Nginx cache dir access error: {}", e)).filter(|p| p.is_file())
-        .filter_map(|p| File::open(&p).ok().map(|f| BufferedReader::new(f))
+        .filter_map(|p| File::open(&p).ok().map(|f| BufReader::new(f))
                     .and_then(|mut f| f.read_exact(HEADER_SIZE).ok()
                          .and_then(|d| if unsafe { (*(d.as_ptr() as *const NginxCacheHeader)).check_magic() }
                                    { f.read_line().ok()

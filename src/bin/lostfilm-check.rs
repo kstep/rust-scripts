@@ -1,29 +1,27 @@
-#![feature(slicing_syntax)]
 #![feature(plugin)]
-#![feature(io, core, collections, rustc_private)]
+#![plugin(regex_macros)]
 
 extern crate encoding;
 
 extern crate hyper;
 extern crate cookie;
 extern crate url;
-#[plugin]
-#[no_link]
-extern crate regex_macros;
 extern crate regex;
-extern crate "rustc-serialize" as rustc_serialize;
-extern crate "script-utils" as utils;
+extern crate rustc_serialize;
+extern crate script_utils as utils;
 extern crate xml;
 extern crate pb;
 #[macro_use]
 extern crate log;
+
+use std::io::Read;
 
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
 
 use hyper::client::{Client, RedirectPolicy};
 use hyper::status::StatusCode;
-use hyper::header::{ContentType, UserAgent, Cookie, SetCookie};
+use hyper::header::{ContentType, UserAgent, Cookie, SetCookie, Referer};
 use hyper::header::{Header, HeaderFormat};
 
 use cookie::CookieJar;
@@ -117,7 +115,7 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
     let decoded_body = WINDOWS_1251.decode(&*response.read_to_end().unwrap(), DecoderTrap::Replace).unwrap();
 
     let action = parser.parse(action_re.captures(&*decoded_body).expect("no action URL found in login form").at(1).unwrap()).unwrap();
-    let form = form_urlencoded::serialize(input_re.captures_iter(&*decoded_body).map(|&: c| (c.at(1).unwrap(), c.at(2).unwrap())));
+    let form = form_urlencoded::serialize(input_re.captures_iter(&*decoded_body).map(|c| (c.at(1).unwrap(), c.at(2).unwrap())));
     debug!("got second stage form: {} {:?}", action, form);
 
     debug!("running second stage...");
@@ -254,7 +252,7 @@ struct TransmissionAPI {
     tag: u32
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct TransmissionSessionId(pub String);
 
 impl Header for TransmissionSessionId {
@@ -271,27 +269,6 @@ impl Header for TransmissionSessionId {
 impl HeaderFormat for TransmissionSessionId {
     fn fmt_header(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         let TransmissionSessionId(ref value) = *self;
-        fmt.write_str(&**value)
-    }
-}
-
-#[derive(Clone)]
-struct Referer(pub String);
-
-impl Header for Referer {
-    #[allow(unused_variables)]
-    fn header_name() -> &'static str {
-        "Referer"
-    }
-
-    fn parse_header(raw: &[Vec<u8>]) -> Option<Referer> {
-        Some(Referer(String::from_utf8_lossy(&*raw[0]).into_owned()))
-    }
-}
-
-impl HeaderFormat for Referer {
-    fn fmt_header(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let Referer(ref value) = *self;
         fmt.write_str(&**value)
     }
 }

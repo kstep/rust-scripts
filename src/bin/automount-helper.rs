@@ -1,34 +1,45 @@
-#![feature(slicing_syntax)]
-#![feature(collections, io, os, path, core)]
+#![feature(path_ext, core)]
+#![feature(test)]
 
-extern crate "rustc-serialize" as serialize;
-extern crate collections;
+extern crate nix;
 
 #[cfg(test)]
 extern crate test;
 
-use std::old_io::fs::PathExtensions;
-use std::os;
-use std::old_io as io;
+use std::env;
+use std::io::{self, Write};
 use std::fmt;
+use std::path::Path;
+use std::fs::PathExt;
+
+use nix::sys::stat::stat;
 
 #[cfg(test)]
 use test::Bencher;
 
 fn automount_name() -> String {
-    os::getenv("ID_FS_LABEL").or_else(|| os::getenv("ID_FS_UUID")).unwrap_or_else(|| {
-        format!("{}_{}_{}", os::getenv("ID_VENDOR").unwrap(), os::getenv("ID_MODEL").unwrap(), os::args()[1])
+    env::var("ID_FS_LABEL").or_else(|_| env::var("ID_FS_UUID")).unwrap_or_else(|_| {
+        format!("{}_{}_{}", env::var("ID_VENDOR").unwrap(), env::var("ID_MODEL").unwrap(), env::args().nth(1).unwrap())
     })
 }
 
 fn ismount(dir: &str) -> bool {
     let path = Path::new(dir);
-    let stat = match path.stat() {
-        Ok(s) => s,
-        Err(_) => return false
-    };
 
-    stat.kind == io::FileType::Directory && (path == path.dir_path() || stat.unstable.device != (match path.dir_path().stat() { Ok(s) => s, Err(_) => return false }).unstable.device)
+    path.is_dir() && {
+        (match stat(match path.parent() {
+            Some(p) if p == Path::new("/") => { println!("parent {:?}",p); Path::new("")},
+            Some(p) => p,
+            None => return true
+        }) {
+            Ok(s) => { println!("parent stat {:?}", s.st_dev); s },
+            Err(e) => return { println!("parent stat err {:?} {:?}", path.parent(), e); false }
+        }).st_dev != (match stat(path) {
+            Ok(s) => {println!("my stat {:?}", s.st_dev); s },
+            Err(e) => return { println!("my stat err {:?} {:?}", path, e); false }
+        }).st_dev
+    }
+
 }
 
 fn systemd_encode(inp: &str) -> String {
@@ -53,10 +64,14 @@ fn main() {
         name = name + "_";
     }
 
-    let service_name = format!("{} /media/{}", os::getenv("DEVNAME").unwrap(), name);
+    let service_name = format!("{} /media/{}", env::var("DEVNAME").unwrap(), name);
 
-    io::stdio::println(&*name);
-    io::stdio::println(&*systemd_encode(&*service_name));
+    let mut out = io::stdout();
+    out.write_all(name.as_bytes()).unwrap();
+    out.write(&[0x10]).unwrap();
+    out.write_all(systemd_encode(&*service_name).as_bytes()).unwrap();
+    out.write(&[0x10]).unwrap();
+    out.flush().unwrap();
 }
 
 #[test]
@@ -75,15 +90,18 @@ fn test_systemd_encode() {
 
 #[test]
 fn test_automount_name() {
+    env::remove_var("ID_FS_UUID");
+    env::remove_var("ID_FS_LABEL");
+
     // TODO: how to fake os::args()?
-    //os::setenv("ID_VENDOR", "Vendor");
-    //os::setenv("ID_MODEL", "Model");
+    //env::set_var("ID_VENDOR", "Vendor");
+    //env::set_var("ID_MODEL", "Model");
     //assert_eq!(&*automount_name(), "Vendor_Model_1");
 
-    os::setenv("ID_FS_UUID", "UUID");
+    env::set_var("ID_FS_UUID", "UUID");
     assert_eq!(&*automount_name(), "UUID");
 
-    os::setenv("ID_FS_LABEL", "LABEL");
+    env::set_var("ID_FS_LABEL", "LABEL");
     assert_eq!(&*automount_name(), "LABEL");
 }
 
@@ -103,7 +121,8 @@ fn bench_ismount(b: &mut Bencher) {
 
 #[bench]
 fn bench_automount_name_label(b: &mut Bencher) {
-    os::setenv("ID_FS_LABEL", "LABEL");
+    env::set_var("ID_FS_LABEL", "LABEL");
+    env::remove_var("ID_FS_UUID");
     b.iter(|| {
         automount_name()
     });
@@ -111,7 +130,8 @@ fn bench_automount_name_label(b: &mut Bencher) {
 
 #[bench]
 fn bench_automount_name_uuid(b: &mut Bencher) {
-    os::setenv("ID_FS_UUID", "UUID");
+    env::set_var("ID_FS_UUID", "UUID");
+    env::remove_var("ID_FS_LABEL");
     b.iter(|| {
         automount_name()
     });

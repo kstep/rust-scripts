@@ -1,15 +1,18 @@
-#![feature(collections)]
+#![feature(duration, ip_addr)]
+
+// TODO
+#![allow(dead_code, unused_variables)]
 
 extern crate xml;
 extern crate pb;
 extern crate hyper;
-extern crate "script-utils" as utils;
+extern crate script_utils as utils;
 extern crate url;
 extern crate time;
 
-use std::old_io::net::ip::IpAddr;
-use hyper::{Client, HttpResult};
-use hyper::net::HttpConnector;
+use std::net::IpAddr;
+use hyper::Client;
+use hyper::Result as HttpResult;
 use url::form_urlencoded;
 use xml::reader::EventReader;
 use xml::reader::events::XmlEvent;
@@ -34,17 +37,17 @@ macro_rules! qs {
 }
 
 
-struct YandexDNS<'a> {
+struct YandexDNS {
     id: String,
     domain: String,
     token: String,
-    client: Client<HttpConnector<'a>>
+    client: Client
 }
 
-impl<'a> YandexDNS<'a> {
-    pub fn new(domain: &str, token: &str) -> YandexDNS<'a> {
+impl YandexDNS {
+    pub fn new(domain: &str, token: &str) -> YandexDNS {
         YandexDNS {
-            id: "".to_string(),
+            id: String::new(),
             domain: domain.to_string(),
             token: token.to_string(),
             client: Client::new()

@@ -1,6 +1,5 @@
-#![feature(slicing_syntax)]
 #![feature(plugin)]
-#![feature(core, io, collections, os)]
+#![plugin(regex_macros)]
 
 #[cfg(test)]
 extern crate test;
@@ -8,20 +7,17 @@ extern crate encoding;
 extern crate toml;
 extern crate hyper;
 extern crate url;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 extern crate core;
-#[plugin]
-#[no_link]
-extern crate regex_macros;
 extern crate regex;
-extern crate "script-utils" as utils;
+extern crate script_utils as utils;
 
 use hyper::client::Client;
 use hyper::header::{Authorization, Basic};
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
 use std::fmt;
-use std::os::set_exit_status;
+use std::env::set_exit_status;
 
 #[cfg(test)]
 use test::Bencher;

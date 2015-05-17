@@ -3,8 +3,8 @@
 extern crate pocket;
 extern crate inotify;
 extern crate xdg;
-extern crate "script-utils" as utils;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate script_utils as utils;
+extern crate rustc_serialize;
 
 use pocket::Pocket;
 use inotify::{INotify, ffi};

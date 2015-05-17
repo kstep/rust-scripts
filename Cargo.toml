@@ -5,7 +5,7 @@ version = "0.0.1"
 authors = ["Konstantin Stepanov <me@kstep.me>"]
 
 [lib]
-name = "script-utils"
+name = "script_utils"
 
 [dependencies]
 url = "*"
@@ -22,6 +22,6 @@ xml-rs = "*"
 time = "*"
 inotify = "*"
 pocket = "*"
-
-[dependencies.xdg]
-git = "https://github.com/kstep/rust-xdg.git"
+xdg-rs = "*"
+log = "*"
+nix = "*"

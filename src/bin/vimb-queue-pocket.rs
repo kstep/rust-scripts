@@ -9,7 +9,7 @@ extern crate rustc_serialize;
 use pocket::Pocket;
 use inotify::{INotify, ffi};
 use std::fs::{File, PathExt};
-use std::io::{BufReader, BufRead, Read};
+use std::io::{BufReader, BufRead};
 
 #[derive(RustcDecodable)]
 struct Creds {
@@ -29,7 +29,7 @@ fn main() {
     println!("watching {} for changes...", queue.display());
     loop {
         inotify.wait_for_events().unwrap();
-        let mut reader = BufReader::new(File::open(&queue).unwrap());
+        let reader = BufReader::new(File::open(&queue).unwrap());
         for line in reader.lines() {
             match pocket.push(&*line.unwrap().trim()) {
                 Ok(item) => println!("added url {}", item.given_url),

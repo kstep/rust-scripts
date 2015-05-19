@@ -1,4 +1,4 @@
-#![feature(duration, ip_addr)]
+#![feature(ip_addr)]
 
 // TODO
 #![allow(dead_code, unused_variables)]
@@ -9,26 +9,31 @@ extern crate hyper;
 extern crate script_utils as utils;
 extern crate url;
 extern crate time;
+extern crate rustc_serialize;
 
+use std::io::Read;
 use std::net::IpAddr;
 use hyper::Client;
 use hyper::Result as HttpResult;
+use hyper::Error as HttpError;
+use hyper::header::{Header, HeaderFormat};
+use hyper::header::ContentType;
 use url::form_urlencoded;
-use xml::reader::EventReader;
-use xml::reader::events::XmlEvent;
-use std::time::Duration;
-use time::Timespec;
+use rustc_serialize::{json, Decodable, Decoder};
+use time::Duration;
 
+#[derive(Debug, Clone)]
 struct Config {
     domain: String,
     token: String
 }
 
+#[derive(Debug, Clone)]
 struct PbConfig {
     access_token: String
 }
 
-static BASE_URL: &'static str = "https://pddimp.yandex.ru/nsapi/";
+static BASE_URL: &'static str = "https://pddimp.yandex.ru/api2/admin/dns";
 
 macro_rules! qs {
     ($($key:expr => $value:expr),*) => {
@@ -36,11 +41,30 @@ macro_rules! qs {
     }
 }
 
+#[derive(Debug, Clone)]
+struct PddToken(String);
+
+impl Header for PddToken {
+    fn header_name() -> &'static str {
+        "PddToken"
+    }
+
+    fn parse_header(raw: &[Vec<u8>]) -> Option<PddToken> {
+        Some(PddToken(String::from_utf8_lossy(&*raw[0]).into_owned()))
+    }
+}
+
+impl HeaderFormat for PddToken {
+    fn fmt_header(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let PddToken(ref value) = *self;
+        fmt.write_str(&**value)
+    }
+}
 
 struct YandexDNS {
     id: String,
     domain: String,
-    token: String,
+    token: PddToken,
     client: Client
 }
 
@@ -48,34 +72,72 @@ impl YandexDNS {
     pub fn new(domain: &str, token: &str) -> YandexDNS {
         YandexDNS {
             id: String::new(),
-            domain: domain.to_string(),
-            token: token.to_string(),
+            domain: domain.to_owned(),
+            token: PddToken(token.to_owned()),
             client: Client::new()
         }
     }
 
-    fn call(&mut self, method: &str, args: &[(&str, &str)]) -> HttpResult<()> {
-        self.client.get(&*format!("https://pddimp.yandex.ru/nsapi/{}.xml?{}", method, form_urlencoded::serialize(args.iter().map(|v| *v))));
-        Ok(())
+    fn call(&mut self, method: &str, args: &[(&str, &str)]) -> HttpResult<NSReply> {
+        let url;
+        let params;
+
+        let mut response = try!(
+            if args.len() == 0 {
+                url = format!("{}/{}?domain={}", BASE_URL, method, self.domain);
+                self.client.get(&*url)
+            } else {
+                url = format!("{}/{}", BASE_URL, method);
+                params = format!("{}&domain={}", form_urlencoded::serialize(args), self.domain);
+                self.client.post(&*url)
+                    .body(&*params)
+            }
+            .header(self.token.clone())
+            .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
+            .send());
+
+        let json : NSReply = {
+            let mut buf = String::new();
+            try!(response.read_to_string(&mut buf));
+            json::decode(&*buf).unwrap()
+        };
+
+        Ok(json)
     }
 
-    pub fn load(&mut self) -> HttpResult<Vec<NSRecord>> {
-        Ok(vec![]) // FIXME: stub
+    pub fn list(&mut self) -> HttpResult<Vec<NSRecord>> {
+        let reply = try!(self.call("list", &[]));
+        Ok(reply.records.unwrap())
+    }
+
+    pub fn add(&mut self, record: NSRecord) -> HttpResult<NSReply> {
+        let reply = try!(self.call("add", &*qs![
+            "type" => record.data.get_type(),
+            "admin_mail" => &*record.data.admin_mail,
+            "content" => &*record.data.get_content()
+            "priority" => record.data.priority,
+            "weight" => record.data.weight,
+            "port" => record.data.port,
+            "target" => record.fqdn,
+            "subdomain" => record.subdomain,
+            "ttl" => record.ttl
+        ]));
     }
 }
 
+#[derive(Debug, Clone)]
 enum NSData {
     A { address: IpAddr },
     AAAA { address: IpAddr },
     PTR { hostname: String },
     CNAME { hostname: String },
     NS { nsserver: String },
-    MX { hostname: String },
+    MX { hostname: String, priority: u16 },
     TXT { payload: String },
     SOA {
         refresh: Duration,
         retry: Duration,
-        expire: Timespec,
+        expire: Duration,
         minttl: Duration,
         admin_mail: String,
         nsserver: String
@@ -83,31 +145,191 @@ enum NSData {
     SRV {
         weight: u16,
         hostname: String,
-        port: u16
+        port: u16,
+        priority: u16
     },
 }
 
+impl NSData {
+    fn get_content(&self) -> String {
+        match *self {
+            NSData::A { address } => address.to_string(),
+            NSData::AAAA { address } => address.to_string(),
+            NSData::PTR { hostname } => hostname.clone(),
+            NSData::CNAME { hostname } => hostname.clone(),
+            NSData::NS { nsserver } => nsserver.clone(),
+            NSData::MX { hostname, .. } => hostname.clone(),
+            NSData::TXT { payload } => payload.clone(),
+            NSData::SOA { nsserver, .. } => nsserver.clone(),
+            NSData::SRV { hostname, .. } => hostname.clone()
+        }
+    }
+    fn get_type(&self) -> &'static str {
+        match *self {
+            NSData::A { .. } => "A",
+            NSData::AAAA { .. } => "AAAA",
+            NSData::PTR { .. } => "PTR",
+            NSData::CNAME { .. } => "CNAME",
+            NSData::NS { .. } => "NS",
+            NSData::MX { .. } => "MX",
+            NSData::TXT { .. } => "TXT",
+            NSData::SOA { .. } => "SOA",
+            NSData::SRV { .. } => "SRV",
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 struct NSRecord {
     id: u32,
     domain: String,
     subdomain: String,
-    priority: u16,
+    fqdn: String,
     ttl: Duration,
     data: NSData,
 }
 
-trait FromXml<T> {
-    fn from_xml(event: &XmlEvent, reader: &mut EventReader<T>) -> Option<Self>;
+#[derive(Debug, Clone)]
+enum NSErrorKind {
+    Unknown,
+    NoToken,
+    NoDomain,
+    NoIp,
+    BadDomain,
+    Prohibited,
+    BadToken,
+    BadLogin,
+    BadPasswd,
+    NoAuth,
+    NotAllowed,
+    Blocked,
+    Occupied,
+    DomainLimitReached,
+    NoReply
 }
 
-impl<T> FromXml<T> for NSData {
-    fn from_xml(event: &XmlEvent, reader: &mut EventReader<T>) -> Option<NSData> {
-        None // FIXME: stub
+impl Decodable for NSErrorKind {
+    fn decode<D: Decoder>(d: &mut D) -> Result<NSErrorKind, D::Error> {
+        match &*try!(d.read_str()) {
+            "unknown" => Ok(NSErrorKind::Unknown),
+            "no_token" => Ok(NSErrorKind::NoToken),
+            "no_domain" => Ok(NSErrorKind::NoDomain),
+            "no_ip" => Ok(NSErrorKind::NoIp),
+            "bad_domain" => Ok(NSErrorKind::BadDomain),
+            "prohibited" => Ok(NSErrorKind::Prohibited),
+            "bad_token" => Ok(NSErrorKind::BadToken),
+            "bad_login" => Ok(NSErrorKind::BadLogin),
+            "bad_password" => Ok(NSErrorKind::BadPasswd),
+            "no_auth" => Ok(NSErrorKind::NoAuth),
+            "not_allowed" => Ok(NSErrorKind::NotAllowed),
+            "blocked" => Ok(NSErrorKind::Blocked),
+            "occupied" => Ok(NSErrorKind::Occupied),
+            "domain_limit_reached" => Ok(NSErrorKind::DomainLimitReached),
+            "no_reply" => Ok(NSErrorKind::NoReply),
+            _ => Err(d.error("invalid error code"))
+        }
+    }
+}
+
+#[derive(Debug)]
+enum NSError {
+    Proto(NSErrorKind),
+    Http(HttpError)
+}
+
+#[derive(RustcDecodable, Debug, Clone)]
+struct NSReply {
+    domain: String,
+    record_id: Option<u32>,
+    record: Option<NSRecord>,
+    records: Option<Vec<NSRecord>>,
+    error: Option<NSErrorKind>,
+    success: NSReplyStatus
+}
+
+#[derive(Debug, Clone, Copy)]
+enum NSReplyStatus {
+    Ok,
+    Err
+}
+
+impl Decodable for NSReplyStatus {
+    fn decode<D: Decoder>(d: &mut D) -> Result<NSReplyStatus, D::Error> {
+        match d.read_str() {
+            Ok(s) => match &*s {
+                "ok" => Ok(NSReplyStatus::Ok),
+                "error" => Ok(NSReplyStatus::Err),
+                _ => Err(d.error("unknown reply status"))
+            },
+            Err(e) => Err(e)
+        }
+    }
+}
+
+impl Decodable for NSRecord {
+    fn decode<D: Decoder>(d: &mut D) -> Result<NSRecord, D::Error> {
+        d.read_struct("NSRecord", 12, |d| {
+            let data = match &*try!(d.read_struct_field("type", 0, |d| d.read_str())) {
+                "A" => NSData::A {
+                    address: match try!(d.read_struct_field("content", 0, |d| d.read_str())).parse() {
+                        Ok(a) => a,
+                        Err(_) => return Err(d.error("invalid ipv4 address"))
+                    }
+                },
+                "AAAA" => NSData::AAAA {
+                    address: match try!(d.read_struct_field("content", 0, |d| d.read_str())).parse() {
+                        Ok(a) => a,
+                        Err(_) => return Err(d.error("invalid ipv6 address"))
+                    }
+                },
+                "CNAME" => NSData::CNAME {
+                    hostname: try!(d.read_struct_field("content", 0, |d| d.read_str()))
+                },
+                "PTR" => NSData::PTR {
+                    hostname: try!(d.read_struct_field("content", 0, |d| d.read_str()))
+                },
+                "MX" => NSData::MX {
+                    hostname: try!(d.read_struct_field("content", 0, |d| d.read_str())),
+                    priority: try!(d.read_struct_field("priority", 0, |d| d.read_u16()))
+                },
+                "NS" => NSData::NS {
+                    nsserver: try!(d.read_struct_field("content", 0, |d| d.read_str()))
+                },
+                "SRV" => NSData::SRV {
+                    hostname: try!(d.read_struct_field("content", 0, |d| d.read_str())),
+                    weight: try!(d.read_struct_field("weight", 0, |d| d.read_u16())),
+                    port: try!(d.read_struct_field("port", 0, |d| d.read_u16())),
+                    priority: try!(d.read_struct_field("priority", 0, |d| d.read_u16()))
+                },
+                "TXT" => NSData::TXT {
+                    payload: try!(d.read_struct_field("content", 0, |d| d.read_str()))
+                },
+                "SOA" => NSData::SOA {
+                    nsserver: try!(d.read_struct_field("content", 0, |d| d.read_str())),
+                    refresh: Duration::seconds(try!(d.read_struct_field("refresh", 0, |d| d.read_i64()))),
+                    retry: Duration::seconds(try!(d.read_struct_field("retry", 0, |d| d.read_i64()))),
+                    expire: Duration::seconds(try!(d.read_struct_field("expire", 0, |d| d.read_i64()))),
+                    minttl: Duration::seconds(try!(d.read_struct_field("minttl", 0, |d| d.read_i64()))),
+                    admin_mail: try!(d.read_struct_field("admin_mail", 0, |d| d.read_str()))
+                },
+                _ => return Err(d.error("unknown record type"))
+            };
+            Ok(NSRecord {
+                data: data,
+                id: try!(d.read_struct_field("record_id", 0, |d| d.read_u32())),
+                domain: try!(d.read_struct_field("domain", 0, |d| d.read_str())),
+                fqdn: try!(d.read_struct_field("fqdn", 0, |d| d.read_str())),
+                subdomain: try!(d.read_struct_field("subdomain", 0, |d| d.read_str())),
+                ttl: Duration::seconds(try!(d.read_struct_field("ttl", 0, |d| d.read_i64()))),
+            })
+        })
     }
 }
 
 fn main() {
-    println!("Hello, world");
+    let token = env!("YANDEX_PDD_TOKEN");
+    let mut yadns = YandexDNS::new("kstep.me", token);
+    println!("{:?}", yadns.list());
 }
 
 /*

@@ -1,4 +1,4 @@
-#![feature(plugin)]
+#![feature(plugin, exit_status)]
 #![plugin(regex_macros)]
 
 #[cfg(test)]
@@ -8,7 +8,6 @@ extern crate toml;
 extern crate hyper;
 extern crate url;
 extern crate rustc_serialize;
-extern crate core;
 extern crate regex;
 extern crate script_utils as utils;
 
@@ -18,6 +17,7 @@ use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
 use std::fmt;
 use std::env::set_exit_status;
+use std::io::{Read};
 
 #[cfg(test)]
 use test::Bencher;
@@ -62,20 +62,22 @@ fn main() {
     let mut client = Client::new();
     client.set_ssl_verifier(Box::new(utils::permissive_ssl_checker));
 
-    let cont = WINDOWS_1251.decode(&*client.get("https://www.adsl.by/001.htm")
+    let mut buf = Vec::new();
+    client.get("https://www.adsl.by/001.htm")
         .header(Authorization(Basic { username: config.username, password: Some(config.password) }))
         .send()
         .unwrap()
-        .read_to_end()
-        .unwrap(), DecoderTrap::Replace)
+        .read_to_end(&mut buf)
         .unwrap();
+
+    let cont = WINDOWS_1251.decode(&*buf, DecoderTrap::Replace).unwrap();
 
     let acct = AcctInfo {
             enabled: state_re.is_match(&*cont),
-            account: account_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.replace(" ", "").parse())).unwrap_or(0),
-            days: days_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse())).unwrap_or(0),
-            price: price_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse())).unwrap_or(0),
-            credit: credit_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse()))
+            account: account_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.replace(" ", "").parse().ok())).unwrap_or(0),
+            days: days_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse().ok())).unwrap_or(0),
+            price: price_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse().ok())).unwrap_or(0),
+            credit: credit_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse().ok()))
         };
 
     println!("{}", acct);

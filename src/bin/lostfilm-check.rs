@@ -112,7 +112,11 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
 
     response.headers.get::<SetCookie>().expect("no login cookies").apply_to_cookie_jar(&mut cookie_jar);
 
-    let decoded_body = WINDOWS_1251.decode(&*response.read_to_end().unwrap(), DecoderTrap::Replace).unwrap();
+    let decoded_body = {
+        let mut buf = Vec::new();
+        response.read_to_end(&mut buf).unwrap();
+        WINDOWS_1251.decode(&*buf, DecoderTrap::Replace).unwrap()
+    };
 
     let action = parser.parse(action_re.captures(&*decoded_body).expect("no action URL found in login form").at(1).unwrap()).unwrap();
     let form = form_urlencoded::serialize(input_re.captures_iter(&*decoded_body).map(|c| (c.at(1).unwrap(), c.at(2).unwrap())));
@@ -148,17 +152,18 @@ fn get_torrent_urls(cookie_jar: &CookieJar, include: &[String], exclude: &[Strin
     let url = format!("{}{}", BASE_URL, "rssdd.xml");
 
     debug!("sending request...");
-    let body = Client::new()
-        .get(&*url)
+    let mut body = Vec::new();
+    let mut client = Client::new();
+    client.get(&*url)
         .header(UserAgent(USER_AGENT.to_string()))
         .send()
         .unwrap()
-        .read_to_end()
+        .read_to_end(&mut body)
         .unwrap();
 
     debug!("parsing response...");
-    let decoded_body = WINDOWS_1251.decode(&*body, DecoderTrap::Replace);
-    let mut reader = EventReader::new_from_string(decoded_body.unwrap());
+    let decoded_body = WINDOWS_1251.decode(&*body, DecoderTrap::Replace).unwrap();
+    let mut reader = EventReader::new(decoded_body.as_bytes());
 
     let mut state = RssState::Init;
     let mut result = Vec::new();
@@ -212,13 +217,14 @@ fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
     client.set_redirect_policy(RedirectPolicy::FollowAll);
 
     debug!("fetching details page...");
-    let body = client.get(details_url)
+    let mut body = Vec::new();
+    client.get(details_url)
         .header(Cookie::from_cookie_jar(cookie_jar))
         .header(UserAgent(USER_AGENT.to_string()))
         .header(Referer(BASE_URL.to_string()))
         .send()
         .unwrap()
-        .read_to_end()
+        .read_to_end(&mut body)
         .unwrap();
 
     debug!("parsing details page...");
@@ -233,13 +239,14 @@ fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
     cookie_jar.add(CookiePair::new(cookie_name, cookie_value));
 
     debug!("fetching tracker page...");
-    let body = client.get(&*href)
+    let mut body = Vec::new();
+    client.get(&*href)
         .header(Cookie::from_cookie_jar(cookie_jar))
         .header(UserAgent(USER_AGENT.to_string()))
         .header(Referer(details_url.to_string()))
         .send()
         .unwrap()
-        .read_to_end()
+        .read_to_end(&mut body)
         .unwrap();
 
     debug!("parsing tracker page...");
@@ -289,8 +296,9 @@ impl TransmissionAPI {
             self.tag = self.tag + 1;
             debug!("sending request with tag {}...", self.tag);
 
+            let resp = format!(r#"{{"tag":"{}","method":"torrent-add","arguments":{{"filename":"{}","download-dir":"{}"}}}}"#, self.tag, url, download_dir.unwrap_or(""));
             let mut resp = client.post(TRANSMISSION_URL)
-                .body(&*format!(r#"{{"tag":"{}","method":"torrent-add","arguments":{{"filename":"{}","download-dir":"{}"}}}}"#, self.tag, url, download_dir.unwrap_or("")))
+                .body(&*resp)
                 .header(self.token.clone())
                 .header(ContentType("application/json".parse().unwrap()))
                 .send()
@@ -299,7 +307,9 @@ impl TransmissionAPI {
             match resp.status {
                 StatusCode::Ok => {
                     debug!("torrent added");
-                    return resp.read_to_string().unwrap().contains("torrent-added");
+                    let mut buf = String::new();
+                    resp.read_to_string(&mut buf).unwrap();
+                    return buf.contains("torrent-added");
                 },
                 StatusCode::Conflict => {
                     debug!("session id update");

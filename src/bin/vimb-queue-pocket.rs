@@ -1,4 +1,4 @@
-#![feature(io)]
+#![feature(path_ext)]
 
 extern crate pocket;
 extern crate inotify;
@@ -8,9 +8,8 @@ extern crate rustc_serialize;
 
 use pocket::Pocket;
 use inotify::{INotify, ffi};
-use std::old_io::fs::File;
-use std::old_io::BufferedReader;
-use xdg::XdgDirs;
+use std::fs::{File, PathExt};
+use std::io::{BufReader, BufRead, Read};
 
 #[derive(RustcDecodable)]
 struct Creds {
@@ -22,9 +21,7 @@ fn main() {
     let config: Creds = utils::load_config("pocket/creds.toml").expect("config file load error");
     let mut pocket = Pocket::new(&*config.consumer_key, Some(&*config.access_token));
 
-    let xdgdirs = XdgDirs::new();
-
-    let queue = xdgdirs.want_read_config("vimb/queue").expect("no vimb config found");
+    let queue = xdg::get_config_dirs().into_iter().filter(|p| p.exists()).next().expect("no vimb config found");
 
     let mut inotify = INotify::init().unwrap();
     inotify.add_watch(&queue, ffi::IN_CLOSE_WRITE).unwrap();
@@ -32,7 +29,7 @@ fn main() {
     println!("watching {} for changes...", queue.display());
     loop {
         inotify.wait_for_events().unwrap();
-        let mut reader = BufferedReader::new(File::open(&queue).unwrap());
+        let mut reader = BufReader::new(File::open(&queue).unwrap());
         for line in reader.lines() {
             match pocket.push(&*line.unwrap().trim()) {
                 Ok(item) => println!("added url {}", item.given_url),

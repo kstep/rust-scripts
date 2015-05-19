@@ -20,5 +20,5 @@ pub fn load_config<C: Decodable>(filename: &str) -> Option<C> {
 }
 
 pub fn permissive_ssl_checker(ctx: &mut openssl::ssl::SslContext) {
-    ctx.set_verify(openssl::ssl::SslVerifyMode::all(), None);
+    ctx.set_verify(openssl::ssl::SSL_VERIFY_NONE, None);
 }

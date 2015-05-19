@@ -1,4 +1,4 @@
-#![feature(plugin, exit_status)]
+#![feature(plugin, exit_status, test)]
 #![plugin(regex_macros)]
 
 #[cfg(test)]

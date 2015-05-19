@@ -1,7 +1,5 @@
-#![feature(path_ext, core)]
+#![feature(path_ext, core, metadata_ext)]
 #![feature(test)]
-
-extern crate nix;
 
 #[cfg(test)]
 extern crate test;
@@ -10,9 +8,8 @@ use std::env;
 use std::io::{self, Write};
 use std::fmt;
 use std::path::Path;
-use std::fs::PathExt;
-
-use nix::sys::stat::stat;
+use std::fs::{PathExt, metadata};
+use std::os::unix::fs::MetadataExt;
 
 #[cfg(test)]
 use test::Bencher;
@@ -27,17 +24,16 @@ fn ismount(dir: &str) -> bool {
     let path = Path::new(dir);
 
     path.is_dir() && {
-        (match stat(match path.parent() {
-            Some(p) if p == Path::new("/") => { println!("parent {:?}",p); Path::new("")},
+        (match metadata(match path.parent() {
             Some(p) => p,
             None => return true
         }) {
-            Ok(s) => { println!("parent stat {:?}", s.st_dev); s },
-            Err(e) => return { println!("parent stat err {:?} {:?}", path.parent(), e); false }
-        }).st_dev != (match stat(path) {
-            Ok(s) => {println!("my stat {:?}", s.st_dev); s },
-            Err(e) => return { println!("my stat err {:?} {:?}", path, e); false }
-        }).st_dev
+            Ok(s) => s,
+            Err(_) => return false
+        }).as_raw().dev() != (match metadata(path) {
+            Ok(s) => s,
+            Err(_) => return false
+        }).as_raw().dev()
     }
 
 }

@@ -7,11 +7,13 @@ use std::env;
 
 #[derive(RustcDecodable)]
 struct Config {
-    access_token: String
+    access_token: String,
+    device_iden: Option<String>
 }
 
 fn main() {
-    let mut api = PbAPI::new(&*utils::load_config::<Config>("pushbullet/creds.toml").unwrap().access_token);
+    let pbcfg = utils::load_config::<Config>("pushbullet/config.toml").unwrap();
+    let mut api = PbAPI::new(&*pbcfg.access_token);
     let torrent_name = env::var("TR_TORRENT_NAME").unwrap();
     let torrent_dir = env::var("TR_TORRENT_DIR").unwrap();
     let push = PushMsg {
@@ -19,7 +21,7 @@ fn main() {
         body: Some(format!("{} downloaded to {}", torrent_name, torrent_dir)),
         target: TargetIden::CurrentUser,
         data: PushData::Note,
-        source_device_iden: None
+        source_device_iden: pbcfg.device_iden
     };
 
     let result: Push = api.send(&push).unwrap();

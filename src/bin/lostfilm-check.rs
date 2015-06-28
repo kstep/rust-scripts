@@ -49,10 +49,11 @@ struct Config {
 
 #[derive(RustcDecodable)]
 struct PbConfig {
-    access_token: String
+    access_token: String,
+    device_iden: Option<String>
 }
 
-fn notify(api: &mut PbAPI, title: &str, url: &str) {
+fn notify(api: &mut PbAPI, device_iden: Option<String>, title: &str, url: &str) {
     println!("added torrent {}: {}",  title, url);
 
     let push = PushMsg {
@@ -60,7 +61,7 @@ fn notify(api: &mut PbAPI, title: &str, url: &str) {
         body: Some(title.to_string()),
         target: TargetIden::CurrentUser,
         data: PushData::Link(Url::parse(url).ok()),
-        source_device_iden: None
+        source_device_iden: device_iden
     };
 
     if let Ok(result @ Push {..}) = api.send(&push) {
@@ -329,7 +330,8 @@ fn main() {
     let download_dir = config.download_dir.as_ref().map(|v| &**v);
 
     debug!("2. initializing api objects...");
-    let mut pbapi = PbAPI::new(&*utils::load_config::<PbConfig>("pushbullet/creds.toml").expect("pushbullet config file missing").access_token);
+    let pbcfg = utils::load_config::<PbConfig>("pushbullet/config.toml").expect("pushbullet config missing");
+    let mut pbapi = PbAPI::new(&*pbcfg.access_token);
     let mut trans = TransmissionAPI::new();
 
     debug!("3. logging in to lostfilm.tv...");
@@ -341,7 +343,7 @@ fn main() {
     debug!("5. adding found torrents to transmission...");
     for (title, url) in urls.into_iter() {
         if trans.add_torrent(&*url, download_dir) {
-            notify(&mut pbapi, &*title, &*url);
+            notify(&mut pbapi, pbcfg.device_iden.clone(), &*title, &*url);
         }
     }
 

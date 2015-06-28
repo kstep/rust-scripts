@@ -1,4 +1,4 @@
-extern crate xdg;
+extern crate xdg_basedir as xdg;
 extern crate toml;
 extern crate rustc_serialize;
 extern crate openssl;

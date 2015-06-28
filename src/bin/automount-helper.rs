@@ -64,9 +64,9 @@ fn main() {
 
     let mut out = io::stdout();
     out.write_all(name.as_bytes()).unwrap();
-    out.write(&[0x10]).unwrap();
+    out.write(&[0x0a]).unwrap();
     out.write_all(systemd_encode(&*service_name).as_bytes()).unwrap();
-    out.write(&[0x10]).unwrap();
+    out.write(&[0x0a]).unwrap();
     out.flush().unwrap();
 }
 

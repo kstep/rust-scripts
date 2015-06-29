@@ -7,6 +7,7 @@
 //use rot::*;
 
 use std::process::Command;
+use std::env;
 
 //#[task]
 fn build() {
@@ -53,17 +54,30 @@ fn install() {
         .unwrap();
 }
 
-use std::env;
+fn help() {
+    println!("Usage:
+    ./Rotfile TARGET
+
+Available targets:
+
+    build
+    release
+    test
+    install
+");
+}
+
 fn main() {
     let mut args = env::args();
-    args.next(); // skip bin name
+    let _ = args.next().unwrap();
 
-    let target = args.next().expect("target name expected");
+    let target = args.next().expect("target name expected; type './Rotfile help' for a list of targets");
     match &*target {
         "build" => build(),
         "release" => release(),
         "test" => test(),
         "install" => install(),
+        "help" => help(),
         _ => panic!("unknown target name: {}", target),
     }
 }

@@ -110,19 +110,22 @@ impl YandexDNS {
         Ok(reply.records.unwrap())
     }
 
+/*
     pub fn add(&mut self, record: NSRecord) -> HttpResult<NSReply> {
         let reply = try!(self.call("add", &*qs![
             "type" => record.data.get_type(),
-            "admin_mail" => &*record.data.admin_mail,
-            "content" => &*record.data.get_content()
-            "priority" => record.data.priority,
-            "weight" => record.data.weight,
-            "port" => record.data.port,
-            "target" => record.fqdn,
-            "subdomain" => record.subdomain,
-            "ttl" => record.ttl
+            //"admin_mail" => &*record.data.admin_mail,
+            //"content" => &*record.data.get_content(),
+            //"priority" => record.data.priority,
+            //"weight" => record.data.weight,
+            //"port" => record.data.port,
+            "target" => &*record.fqdn,
+            "subdomain" => &*record.subdomain,
+            "ttl" => &*record.ttl.num_seconds().to_string()
         ]));
+        Ok(reply)
     }
+    */
 }
 
 #[derive(Debug, Clone)]
@@ -153,15 +156,15 @@ enum NSData {
 impl NSData {
     fn get_content(&self) -> String {
         match *self {
-            NSData::A { address } => address.to_string(),
-            NSData::AAAA { address } => address.to_string(),
-            NSData::PTR { hostname } => hostname.clone(),
-            NSData::CNAME { hostname } => hostname.clone(),
-            NSData::NS { nsserver } => nsserver.clone(),
-            NSData::MX { hostname, .. } => hostname.clone(),
-            NSData::TXT { payload } => payload.clone(),
-            NSData::SOA { nsserver, .. } => nsserver.clone(),
-            NSData::SRV { hostname, .. } => hostname.clone()
+            NSData::A { ref address } => address.to_string(),
+            NSData::AAAA { ref address } => address.to_string(),
+            NSData::PTR { ref hostname } => hostname.clone(),
+            NSData::CNAME { ref hostname } => hostname.clone(),
+            NSData::NS { ref nsserver } => nsserver.clone(),
+            NSData::MX { ref hostname, .. } => hostname.clone(),
+            NSData::TXT { ref payload } => payload.clone(),
+            NSData::SOA { ref nsserver, .. } => nsserver.clone(),
+            NSData::SRV { ref hostname, .. } => hostname.clone()
         }
     }
     fn get_type(&self) -> &'static str {
@@ -327,7 +330,7 @@ impl Decodable for NSRecord {
 }
 
 fn main() {
-    let token = env!("YANDEX_PDD_TOKEN");
+    let token = option_env!("YANDEX_PDD_TOKEN").unwrap();
     let mut yadns = YandexDNS::new("kstep.me", token);
     println!("{:?}", yadns.list());
 }

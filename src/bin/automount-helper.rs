@@ -1,4 +1,5 @@
-#![feature(path_ext, core, metadata_ext)]
+#![feature(fmt_radix)]
+#![feature(path_ext)]
 #![feature(test)]
 
 #[cfg(test)]
@@ -30,10 +31,10 @@ fn ismount(dir: &str) -> bool {
         }) {
             Ok(s) => s,
             Err(_) => return false
-        }).as_raw().dev() != (match metadata(path) {
+        }).dev() != (match metadata(path) {
             Ok(s) => s,
             Err(_) => return false
-        }).as_raw().dev()
+        }).dev()
     }
 
 }

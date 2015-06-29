@@ -49,8 +49,8 @@ impl Header for PddToken {
         "PddToken"
     }
 
-    fn parse_header(raw: &[Vec<u8>]) -> Option<PddToken> {
-        Some(PddToken(String::from_utf8_lossy(&*raw[0]).into_owned()))
+    fn parse_header(raw: &[Vec<u8>]) -> Result<PddToken, HttpError> {
+        Ok(PddToken(String::from_utf8_lossy(&*raw[0]).into_owned()))
     }
 }
 

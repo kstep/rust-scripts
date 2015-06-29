@@ -2,7 +2,7 @@
 
 extern crate pocket;
 extern crate inotify;
-extern crate xdg;
+extern crate xdg_basedir as xdg;
 extern crate script_utils as utils;
 extern crate rustc_serialize;
 

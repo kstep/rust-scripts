@@ -1,4 +1,4 @@
-#![feature(plugin, exit_status, test)]
+#![feature(plugin)]
 #![plugin(regex_macros)]
 
 #[cfg(test)]
@@ -15,8 +15,8 @@ use hyper::client::Client;
 use hyper::header::{Authorization, Basic};
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_1251;
+use std::process::exit;
 use std::fmt;
-use std::env::set_exit_status;
 use std::io::{Read};
 
 #[cfg(test)]
@@ -59,8 +59,8 @@ fn main() {
 
     let config: Creds = utils::load_config("adslby/creds.toml").expect("config file load error");
 
-    let mut client = Client::new();
-    client.set_ssl_verifier(Box::new(utils::permissive_ssl_checker));
+    let client = Client::new();
+    //client.set_ssl_verifier(Box::new(utils::permissive_ssl_checker));
 
     let mut buf = Vec::new();
     client.get("https://www.adsl.by/001.htm")
@@ -81,7 +81,7 @@ fn main() {
         };
 
     println!("{}", acct);
-    set_exit_status(if acct.enabled { 0 } else { 1 });
+    exit(if acct.enabled { 0 } else { 1 });
 }
 
 #[bench]

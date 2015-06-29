@@ -21,6 +21,7 @@ use encoding::all::WINDOWS_1251;
 
 use hyper::client::{Client, RedirectPolicy};
 use hyper::status::StatusCode;
+use hyper::error::Error as HttpError;
 use hyper::header::{ContentType, UserAgent, Cookie, SetCookie, Referer};
 use hyper::header::{Header, HeaderFormat};
 
@@ -154,7 +155,7 @@ fn get_torrent_urls(cookie_jar: &CookieJar, include: &[String], exclude: &[Strin
 
     debug!("sending request...");
     let mut body = Vec::new();
-    let mut client = Client::new();
+    let client = Client::new();
     client.get(&*url)
         .header(UserAgent(USER_AGENT.to_string()))
         .send()
@@ -269,8 +270,8 @@ impl Header for TransmissionSessionId {
         "X-Transmission-Session-Id"
     }
 
-    fn parse_header(raw: &[Vec<u8>]) -> Option<TransmissionSessionId> {
-        Some(TransmissionSessionId(String::from_utf8_lossy(&*raw[0]).into_owned()))
+    fn parse_header(raw: &[Vec<u8>]) -> Result<TransmissionSessionId, HttpError> {
+        Ok(TransmissionSessionId(String::from_utf8_lossy(&*raw[0]).into_owned()))
     }
 }
 
@@ -291,7 +292,7 @@ impl TransmissionAPI {
 
     pub fn add_torrent(&mut self, url: &str, download_dir: Option<&str>) -> bool {
         debug!("adding {} ({:?}) to torrents queue", url, download_dir);
-        let mut client = Client::new();
+        let client = Client::new();
 
         loop {
             self.tag = self.tag + 1;

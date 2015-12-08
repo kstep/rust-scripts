@@ -16,7 +16,10 @@ use test::Bencher;
 
 fn automount_name() -> String {
     env::var("ID_FS_LABEL").or_else(|_| env::var("ID_FS_UUID")).unwrap_or_else(|_| {
-        format!("{}_{}_{}", env::var("ID_VENDOR").unwrap(), env::var("ID_MODEL").unwrap(), env::args().nth(1).unwrap())
+        format!("{}_{}_{}",
+                env::var("ID_VENDOR").expect("ID_VENDOR env var"),
+                env::var("ID_MODEL").expect("ID_MODEL env var"),
+                env::args().nth(1).expect("device name is missing"))
     })
 }
 

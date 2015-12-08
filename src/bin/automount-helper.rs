@@ -1,6 +1,5 @@
 #![feature(fmt_radix)]
-#![feature(path_ext)]
-#![feature(test)]
+#![cfg_attr(test, feature(test))]
 
 #[cfg(test)]
 extern crate test;
@@ -9,7 +8,7 @@ use std::env;
 use std::io::{self, Write};
 use std::fmt;
 use std::path::Path;
-use std::fs::{PathExt, metadata};
+use std::fs::{metadata};
 use std::os::unix::fs::MetadataExt;
 
 #[cfg(test)]

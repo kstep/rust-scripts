@@ -1,9 +1,9 @@
-#![feature(fs_walk, path_ext)]
+#![feature(fs_walk)]
 
 extern crate url;
 
 use std::path::Path;
-use std::fs::{File, PathExt, walk_dir};
+use std::fs::{File, walk_dir};
 use std::io::{BufReader, BufRead, Read};
 use std::env;
 use std::mem::transmute;

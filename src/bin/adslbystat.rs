@@ -1,4 +1,5 @@
 #![feature(plugin)]
+#![cfg_attr(test, feature(test))]
 #![plugin(regex_macros)]
 
 #[cfg(test)]

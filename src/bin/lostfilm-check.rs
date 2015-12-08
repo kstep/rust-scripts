@@ -29,8 +29,7 @@ use cookie::CookieJar;
 use cookie::Cookie as CookiePair;
 
 use url::{Url, UrlParser, form_urlencoded};
-use xml::reader::EventReader;
-use xml::reader::events::XmlEvent;
+use xml::reader::{EventReader, XmlEvent};
 use xml::name::OwnedName;
 use pb::{PbAPI, PushMsg, TargetIden, Push, PushData};
 
@@ -165,15 +164,15 @@ fn get_torrent_urls(cookie_jar: &CookieJar, include: &[String], exclude: &[Strin
 
     debug!("parsing response...");
     let decoded_body = WINDOWS_1251.decode(&*body, DecoderTrap::Replace).unwrap();
-    let mut reader = EventReader::new(decoded_body.as_bytes());
+    let reader = EventReader::new(decoded_body.as_bytes());
 
     let mut state = RssState::Init;
     let mut result = Vec::new();
     let mut needed = false;
     let mut title = "".to_string();
 
-    for ev in reader.events() {
-        match ev {
+    for ev in reader {
+        match ev.unwrap() {
             XmlEvent::StartElement { name: OwnedName { ref local_name, .. }, .. } => match (&state, &**local_name) {
                 (&RssState::Init, "channel") => state = RssState::InChannel,
                 (&RssState::InChannel, "item") => state = RssState::InItem,

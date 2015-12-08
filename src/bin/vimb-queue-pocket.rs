@@ -1,5 +1,3 @@
-#![feature(path_ext)]
-
 extern crate pocket;
 extern crate inotify;
 extern crate xdg_basedir as xdg;
@@ -8,7 +6,7 @@ extern crate rustc_serialize;
 
 use pocket::Pocket;
 use inotify::{INotify, ffi};
-use std::fs::{File, PathExt};
+use std::fs::File;
 use std::io::{BufReader, BufRead};
 
 #[derive(RustcDecodable)]

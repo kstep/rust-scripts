@@ -1,4 +1,4 @@
-#!/usr/local/bin/rustrun
+#!/usr/bin/env run-cargo-script
 //#![feature(plugin)]
 
 //#![plugin(rot)]

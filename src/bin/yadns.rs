@@ -1,4 +1,7 @@
 #![feature(ip_addr)]
+#![feature(custom_derive, plugin)]
+#![feature(custom_attribute)]
+#![plugin(serde_macros)]
 
 // TODO
 #![allow(dead_code, unused_variables)]
@@ -9,17 +12,18 @@ extern crate hyper;
 extern crate script_utils as utils;
 extern crate url;
 extern crate time;
-extern crate rustc_serialize;
+extern crate serde;
+extern crate serde_json;
 
 use std::io::Read;
 use std::net::IpAddr;
+use std::borrow::Cow;
 use hyper::Client;
 use hyper::Result as HttpResult;
 use hyper::Error as HttpError;
 use hyper::header::{Header, HeaderFormat};
 use hyper::header::ContentType;
 use url::form_urlencoded;
-use rustc_serialize::{json, Decodable, Decoder};
 use time::Duration;
 
 #[derive(Debug, Clone)]
@@ -68,6 +72,203 @@ struct YandexDNS {
     client: Client
 }
 
+#[derive(Debug)]
+enum DnsType {
+    Srv,
+    Txt,
+    Ns,
+    Mx,
+    Soa,
+    A,
+    Aaaa,
+    Cname,
+}
+
+impl serde::Deserialize for DnsType {
+    fn deserialize<D: serde::Deserializer>(d: &mut D) -> Result<DnsType, D::Error> {
+        struct DnsTypeVisitor;
+
+        impl serde::de::Visitor for DnsTypeVisitor {
+            type Value = DnsType;
+            fn visit_str<E: serde::de::Error>(&mut self, v: &str) -> Result<DnsType, E> {
+                use self::DnsType::*;
+                match v {
+                    "SRV" => Ok(Srv),
+                    "TXT" => Ok(Txt),
+                    "NS" => Ok(Ns),
+                    "MX" => Ok(Mx),
+                    "SOA" => Ok(Soa),
+                    "A" => Ok(A),
+                    "AAAA" => Ok(Aaaa),
+                    "CNAME" => Ok(Cname),
+                    _ => Err(serde::de::Error::unknown_field("unknown record type"))
+                }
+            }
+        }
+
+        d.visit(DnsTypeVisitor)
+    }
+}
+
+#[derive(Debug, Deserialize)]
+enum Priority {
+    Empty(String),
+    Value(u32),
+}
+
+#[derive(Debug, Deserialize)]
+struct RecordDTO {
+    record_id: u64,
+    #[serde(rename="type")]
+    kind: DnsType,
+    domain: String,
+    subdomain: String,
+    fqdn: String,
+    content: String,
+    ttl: u32,
+
+    priority: Priority,
+
+    // SOA
+    refresh: Option<u32>,
+    admin_mail: Option<String>,
+    expire: Option<u32>,
+    minttl: Option<u32>,
+
+    // SRV
+    weight: Option<u32>,
+    port: Option<u16>,
+
+    // edit
+    operation: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct ListReplyDTO {
+    records: Vec<RecordDTO>,
+    domain: String,
+    success: String,
+}
+
+#[derive(Deserialize)]
+struct EditReplyDTO {
+    domain: String,
+    record_id: u64,
+    record: RecordDTO,
+    success: String,
+}
+
+#[derive(Deserialize)]
+struct AddReplyDTO {
+    domain: String,
+    record: RecordDTO,
+    success: String,
+}
+
+#[derive(Deserialize)]
+struct DeleteReplyDTO {
+    domain: String,
+    record_id: u64,
+    success: String,
+}
+
+#[derive(Deserialize)]
+struct ErrorReplyDTO {
+    domain: String,
+    success: String,
+    error: ErrorCode,
+}
+
+#[derive(Debug, Clone)]
+enum ErrorCode {
+    Unknown,
+    NoToken,
+    NoDomain,
+    NoIp,
+    BadDomain,
+    Prohibited,
+    BadToken,
+    BadLogin,
+    BadPasswd,
+    NoAuth,
+    NotAllowed,
+    Blocked,
+    Occupied,
+    DomainLimitReached,
+    NoReply,
+}
+
+impl serde::Deserialize for ErrorCode {
+    fn deserialize<D: serde::Deserializer>(d: &mut D) -> Result<ErrorCode, D::Error> {
+        struct ErrorCodeVisitor;
+
+        impl serde::de::Visitor for ErrorCodeVisitor {
+            type Value = ErrorCode;
+            fn visit_str<E: serde::de::Error>(&mut self, v: &str) -> Result<ErrorCode, E> {
+                use self::ErrorCode::*;
+                match v {
+                    "unknown" => Ok(Unknown),
+                    "no_token" => Ok(NoToken),
+                    "no_domain" => Ok(NoDomain),
+                    "no_ip" => Ok(NoIp),
+                    "bad_domain" => Ok(BadDomain),
+                    "prohibited" => Ok(Prohibited),
+                    "bad_token" => Ok(BadToken),
+                    "bad_login" => Ok(BadLogin),
+                    "bad_password" => Ok(BadPasswd),
+                    "no_auth" => Ok(NoAuth),
+                    "not_allowed" => Ok(NotAllowed),
+                    "blocked" => Ok(Blocked),
+                    "occupied" => Ok(Occupied),
+                    "domain_limit_reached" => Ok(DomainLimitReached),
+                    "no_reply" => Ok(NoReply),
+                    _ => Err(serde::de::Error::unknown_field("invalid error code"))
+                }
+            }
+        }
+
+        d.visit(ErrorCodeVisitor)
+    }
+}
+
+struct AddRequestDTO<'a> {
+    domain: Cow<'a, str>,
+    kind: DnsType,
+
+    admin_mail: Cow<'a, str>, // required for SOA
+    content: Cow<'a, str>, // Ipv4 for A, Ipv6 for AAAA, string for CNAME, MX, NS, TXT
+    priority: u32, // required for SRV and MX, default: 10
+    weight: u32, // required for SRV
+    port: u16, // required for SRV
+    target: Cow<'a, str>, // required for SRV
+
+    subdomain: Cow<'a, str>,
+    ttl: u32, // default: 21600
+}
+
+struct EditRequestDTO<'a> {
+    domain: Cow<'a, str>,
+    record_id: u64,
+
+    subdomain: Option<Cow<'a, str>>, // default: "@"
+    ttl: Option<u32>, // default: 21600, 900...21600
+    refresh: Option<u32>, // for SOA, default: 10800, 900...86400
+    retry: Option<u32>, // for SOA, default: 900, 90...3600
+    expire: Option<u32>, // for SOA, default: 900, 90...3600
+    neg_cache: Option<u32>, // for SOA, default: 10800, 90...86400
+    admin_mail: Option<Cow<'a, str>>, // required for SOA
+    content: Option<Cow<'a, str>>, // Ipv4 for A, Ipv6 for AAAA, string for CNAME, MX, NS, TXT
+    priority: Option<u32>, // required for SRV and MX, default: 10
+    port: Option<u16>, // required for SRV
+    weight: Option<u32>, // required for SRV
+    target: Option<Cow<'a, str>>, // required for SRV
+}
+
+struct DeleteRequestDTO<'a> {
+    domain: Cow<'a, str>,
+    record_id: u64,
+}
+
 impl YandexDNS {
     pub fn new(domain: &str, token: &str) -> YandexDNS {
         YandexDNS {
@@ -78,7 +279,7 @@ impl YandexDNS {
         }
     }
 
-    fn call(&mut self, method: &str, args: &[(&str, &str)]) -> HttpResult<NSReply> {
+    fn call<T: serde::Deserialize>(&mut self, method: &str, args: &[(&str, &str)]) -> HttpResult<T> {
         let url;
         let params;
 
@@ -96,18 +297,18 @@ impl YandexDNS {
             .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
             .send());
 
-        let json : NSReply = {
+        let data = {
             let mut buf = String::new();
             try!(response.read_to_string(&mut buf));
-            json::decode(&*buf).unwrap()
+            buf
         };
-
-        Ok(json)
+        println!("reply: {:?}", data);
+        Ok(serde_json::from_str(data.trim()).unwrap())
     }
 
-    pub fn list(&mut self) -> HttpResult<Vec<NSRecord>> {
-        let reply = try!(self.call("list", &[]));
-        Ok(reply.records.unwrap())
+    pub fn list(&mut self) -> HttpResult<Vec<RecordDTO>> {
+        let reply: ListReplyDTO = try!(self.call("list", &[]));
+        Ok(reply.records)
     }
 
 /*
@@ -128,206 +329,6 @@ impl YandexDNS {
     */
 }
 
-#[derive(Debug, Clone)]
-enum NSData {
-    A { address: IpAddr },
-    AAAA { address: IpAddr },
-    PTR { hostname: String },
-    CNAME { hostname: String },
-    NS { nsserver: String },
-    MX { hostname: String, priority: u16 },
-    TXT { payload: String },
-    SOA {
-        refresh: Duration,
-        retry: Duration,
-        expire: Duration,
-        minttl: Duration,
-        admin_mail: String,
-        nsserver: String
-    },
-    SRV {
-        weight: u16,
-        hostname: String,
-        port: u16,
-        priority: u16
-    },
-}
-
-impl NSData {
-    fn get_content(&self) -> String {
-        match *self {
-            NSData::A { ref address } => address.to_string(),
-            NSData::AAAA { ref address } => address.to_string(),
-            NSData::PTR { ref hostname } => hostname.clone(),
-            NSData::CNAME { ref hostname } => hostname.clone(),
-            NSData::NS { ref nsserver } => nsserver.clone(),
-            NSData::MX { ref hostname, .. } => hostname.clone(),
-            NSData::TXT { ref payload } => payload.clone(),
-            NSData::SOA { ref nsserver, .. } => nsserver.clone(),
-            NSData::SRV { ref hostname, .. } => hostname.clone()
-        }
-    }
-    fn get_type(&self) -> &'static str {
-        match *self {
-            NSData::A { .. } => "A",
-            NSData::AAAA { .. } => "AAAA",
-            NSData::PTR { .. } => "PTR",
-            NSData::CNAME { .. } => "CNAME",
-            NSData::NS { .. } => "NS",
-            NSData::MX { .. } => "MX",
-            NSData::TXT { .. } => "TXT",
-            NSData::SOA { .. } => "SOA",
-            NSData::SRV { .. } => "SRV",
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-struct NSRecord {
-    id: u32,
-    domain: String,
-    subdomain: String,
-    fqdn: String,
-    ttl: Duration,
-    data: NSData,
-}
-
-#[derive(Debug, Clone)]
-enum NSErrorKind {
-    Unknown,
-    NoToken,
-    NoDomain,
-    NoIp,
-    BadDomain,
-    Prohibited,
-    BadToken,
-    BadLogin,
-    BadPasswd,
-    NoAuth,
-    NotAllowed,
-    Blocked,
-    Occupied,
-    DomainLimitReached,
-    NoReply
-}
-
-impl Decodable for NSErrorKind {
-    fn decode<D: Decoder>(d: &mut D) -> Result<NSErrorKind, D::Error> {
-        match &*try!(d.read_str()) {
-            "unknown" => Ok(NSErrorKind::Unknown),
-            "no_token" => Ok(NSErrorKind::NoToken),
-            "no_domain" => Ok(NSErrorKind::NoDomain),
-            "no_ip" => Ok(NSErrorKind::NoIp),
-            "bad_domain" => Ok(NSErrorKind::BadDomain),
-            "prohibited" => Ok(NSErrorKind::Prohibited),
-            "bad_token" => Ok(NSErrorKind::BadToken),
-            "bad_login" => Ok(NSErrorKind::BadLogin),
-            "bad_password" => Ok(NSErrorKind::BadPasswd),
-            "no_auth" => Ok(NSErrorKind::NoAuth),
-            "not_allowed" => Ok(NSErrorKind::NotAllowed),
-            "blocked" => Ok(NSErrorKind::Blocked),
-            "occupied" => Ok(NSErrorKind::Occupied),
-            "domain_limit_reached" => Ok(NSErrorKind::DomainLimitReached),
-            "no_reply" => Ok(NSErrorKind::NoReply),
-            _ => Err(d.error("invalid error code"))
-        }
-    }
-}
-
-#[derive(Debug)]
-enum NSError {
-    Proto(NSErrorKind),
-    Http(HttpError)
-}
-
-#[derive(RustcDecodable, Debug, Clone)]
-struct NSReply {
-    domain: String,
-    record_id: Option<u32>,
-    record: Option<NSRecord>,
-    records: Option<Vec<NSRecord>>,
-    error: Option<NSErrorKind>,
-    success: NSReplyStatus
-}
-
-#[derive(Debug, Clone, Copy)]
-enum NSReplyStatus {
-    Ok,
-    Err
-}
-
-impl Decodable for NSReplyStatus {
-    fn decode<D: Decoder>(d: &mut D) -> Result<NSReplyStatus, D::Error> {
-        match d.read_str() {
-            Ok(s) => match &*s {
-                "ok" => Ok(NSReplyStatus::Ok),
-                "error" => Ok(NSReplyStatus::Err),
-                _ => Err(d.error("unknown reply status"))
-            },
-            Err(e) => Err(e)
-        }
-    }
-}
-
-impl Decodable for NSRecord {
-    fn decode<D: Decoder>(d: &mut D) -> Result<NSRecord, D::Error> {
-        d.read_struct("NSRecord", 12, |d| {
-            let data = match &*try!(d.read_struct_field("type", 0, |d| d.read_str())) {
-                "A" => NSData::A {
-                    address: match try!(d.read_struct_field("content", 0, |d| d.read_str())).parse() {
-                        Ok(a) => a,
-                        Err(_) => return Err(d.error("invalid ipv4 address"))
-                    }
-                },
-                "AAAA" => NSData::AAAA {
-                    address: match try!(d.read_struct_field("content", 0, |d| d.read_str())).parse() {
-                        Ok(a) => a,
-                        Err(_) => return Err(d.error("invalid ipv6 address"))
-                    }
-                },
-                "CNAME" => NSData::CNAME {
-                    hostname: try!(d.read_struct_field("content", 0, |d| d.read_str()))
-                },
-                "PTR" => NSData::PTR {
-                    hostname: try!(d.read_struct_field("content", 0, |d| d.read_str()))
-                },
-                "MX" => NSData::MX {
-                    hostname: try!(d.read_struct_field("content", 0, |d| d.read_str())),
-                    priority: try!(d.read_struct_field("priority", 0, |d| d.read_u16()))
-                },
-                "NS" => NSData::NS {
-                    nsserver: try!(d.read_struct_field("content", 0, |d| d.read_str()))
-                },
-                "SRV" => NSData::SRV {
-                    hostname: try!(d.read_struct_field("content", 0, |d| d.read_str())),
-                    weight: try!(d.read_struct_field("weight", 0, |d| d.read_u16())),
-                    port: try!(d.read_struct_field("port", 0, |d| d.read_u16())),
-                    priority: try!(d.read_struct_field("priority", 0, |d| d.read_u16()))
-                },
-                "TXT" => NSData::TXT {
-                    payload: try!(d.read_struct_field("content", 0, |d| d.read_str()))
-                },
-                "SOA" => NSData::SOA {
-                    nsserver: try!(d.read_struct_field("content", 0, |d| d.read_str())),
-                    refresh: Duration::seconds(try!(d.read_struct_field("refresh", 0, |d| d.read_i64()))),
-                    retry: Duration::seconds(try!(d.read_struct_field("retry", 0, |d| d.read_i64()))),
-                    expire: Duration::seconds(try!(d.read_struct_field("expire", 0, |d| d.read_i64()))),
-                    minttl: Duration::seconds(try!(d.read_struct_field("minttl", 0, |d| d.read_i64()))),
-                    admin_mail: try!(d.read_struct_field("admin_mail", 0, |d| d.read_str()))
-                },
-                _ => return Err(d.error("unknown record type"))
-            };
-            Ok(NSRecord {
-                data: data,
-                id: try!(d.read_struct_field("record_id", 0, |d| d.read_u32())),
-                domain: try!(d.read_struct_field("domain", 0, |d| d.read_str())),
-                fqdn: try!(d.read_struct_field("fqdn", 0, |d| d.read_str())),
-                subdomain: try!(d.read_struct_field("subdomain", 0, |d| d.read_str())),
-                ttl: Duration::seconds(try!(d.read_struct_field("ttl", 0, |d| d.read_i64()))),
-            })
-        })
-    }
-}
 
 fn main() {
     let token = option_env!("YANDEX_PDD_TOKEN").unwrap();

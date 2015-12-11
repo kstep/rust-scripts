@@ -18,6 +18,7 @@ extern crate serde_json;
 use std::io::Read;
 use std::net::IpAddr;
 use std::borrow::Cow;
+use std::fmt;
 use hyper::Client;
 use hyper::Result as HttpResult;
 use hyper::Error as HttpError;
@@ -110,10 +111,48 @@ impl serde::Deserialize for DnsType {
     }
 }
 
-#[derive(Debug, Deserialize)]
-enum Priority {
-    Empty(String),
-    Value(u32),
+struct Skip<T>(Option<T>);
+
+impl<T: fmt::Debug> fmt::Debug for Skip<T> where Option<T>: fmt::Debug {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl<T: fmt::Display> fmt::Display for Skip<T> where Option<T>: fmt::Display {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl<T: serde::Deserialize> serde::Deserialize for Skip<T> {
+    fn deserialize<D: serde::Deserializer>(de: &mut D) -> Result<Skip<T>, D::Error> {
+        serde::Deserialize::deserialize(de).map(Some).or_else(|_| Ok(None)).map(Skip)
+    }
+}
+
+impl<T> Into<Option<T>> for Skip<T> {
+    fn into(self) -> Option<T> {
+        self.0
+    }
+}
+
+impl<T> From<Option<T>> for Skip<T> {
+    fn from(value: Option<T>) -> Skip<T> {
+        Skip(value)
+    }
+}
+
+impl<T> ::std::ops::Deref for Skip<T> {
+    type Target = Option<T>;
+    fn deref(&self) -> &Option<T> {
+        &self.0
+    }
+}
+impl<T> ::std::ops::DerefMut for Skip<T> {
+    fn deref_mut(&mut self) -> &mut Option<T> {
+        &mut self.0
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -127,7 +166,7 @@ struct RecordDTO {
     content: String,
     ttl: u32,
 
-    priority: Priority,
+    priority: Skip<u32>,
 
     // SOA
     refresh: Option<u32>,

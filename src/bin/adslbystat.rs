@@ -1,6 +1,7 @@
-#![feature(plugin)]
+#![feature(custom_derive, plugin)]
 #![cfg_attr(test, feature(test))]
 #![plugin(regex_macros)]
+#![plugin(serde_macros)]
 
 #[cfg(test)]
 extern crate test;
@@ -8,7 +9,7 @@ extern crate encoding;
 extern crate toml;
 extern crate hyper;
 extern crate url;
-extern crate rustc_serialize;
+extern crate serde;
 extern crate regex;
 extern crate script_utils as utils;
 
@@ -47,7 +48,7 @@ impl fmt::Display for AcctInfo {
     }
 }
 
-#[derive(RustcDecodable, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 struct Creds {
     username: String,
     password: String

@@ -19,7 +19,7 @@ cookie = "*"
 openssl = "*"
 hyper = "*"
 encoding = "*"
-toml = "*"
+toml = { version = "*", default-features = false, features = ["serde"] }
 pb = "*"
 xml-rs = "*"
 time = "*"

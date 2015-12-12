@@ -1,6 +1,7 @@
 #![feature(fs_walk)]
 
 extern crate url;
+extern crate serde;
 
 use std::path::Path;
 use std::fs::{File, walk_dir};

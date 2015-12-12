@@ -1,15 +1,18 @@
+#![feature(custom_derive, plugin)]
+#![plugin(serde_macros)]
+
 extern crate pocket;
 extern crate inotify;
 extern crate xdg_basedir as xdg;
 extern crate script_utils as utils;
-extern crate rustc_serialize;
+extern crate serde;
 
 use pocket::Pocket;
 use inotify::{INotify, ffi};
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize)]
 struct Creds {
     consumer_key: String,
     access_token: String,

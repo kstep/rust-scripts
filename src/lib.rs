@@ -1,13 +1,13 @@
 extern crate xdg_basedir as xdg;
 extern crate toml;
-extern crate rustc_serialize;
+extern crate serde;
 extern crate openssl;
 
-use rustc_serialize::Decodable;
+use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
 
-pub fn load_config<C: Decodable>(filename: &str) -> Option<C> {
+pub fn load_config<C: Deserialize>(filename: &str) -> Option<C> {
     xdg::get_config_dirs().into_iter()
         .filter_map(|p| File::open(p.join(filename)).ok()).next()
         .and_then(|mut f| {

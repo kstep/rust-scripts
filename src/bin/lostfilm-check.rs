@@ -1,5 +1,6 @@
-#![feature(plugin)]
+#![feature(custom_derive, plugin)]
 #![plugin(regex_macros)]
+#![plugin(serde_macros)]
 
 extern crate encoding;
 
@@ -7,7 +8,7 @@ extern crate hyper;
 extern crate cookie;
 extern crate url;
 extern crate regex;
-extern crate rustc_serialize;
+extern crate serde;
 extern crate script_utils as utils;
 extern crate xml;
 extern crate pb;
@@ -38,7 +39,7 @@ static TRANSMISSION_URL: &'static str = "http://localhost:9091/transmission/rpc"
 static BASE_URL: &'static str = "http://www.lostfilm.tv/";
 static LOGIN_URL: &'static str = "http://login1.bogi.ru/login.php";
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize)]
 struct Config {
     include: Vec<String>,
     exclude: Vec<String>,
@@ -47,7 +48,7 @@ struct Config {
     download_dir: Option<String>
 }
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize)]
 struct PbConfig {
     access_token: String,
     device_iden: Option<String>

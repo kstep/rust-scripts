@@ -27,3 +27,5 @@ inotify = "*"
 pocket = "*"
 xdg-basedir = "*"
 log = "*"
+walkdir = "*"
+yadns = { path = "../yadns" }

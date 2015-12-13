@@ -23,7 +23,7 @@ dependencies = [
  "walkdir 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "xdg-basedir 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "xml-rs 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "yadns 0.1.0",
+ "yadns 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -528,6 +528,7 @@ dependencies = [
 [[package]]
 name = "yadns"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "hyper 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 0.6.6 (registry+https://github.com/rust-lang/crates.io-index)",

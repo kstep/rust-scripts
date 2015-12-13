@@ -2,9 +2,6 @@
 #![feature(custom_attribute)]
 #![plugin(serde_macros)]
 
-// TODO
-#![allow(dead_code, unused_variables)]
-
 extern crate pb;
 extern crate script_utils as utils;
 extern crate yadns;
@@ -13,6 +10,7 @@ extern crate serde;
 use std::env;
 use std::net::Ipv4Addr;
 use yadns::{YandexDNS, ListRequest, AddRequest, DnsType};
+use pb::{PbAPI, PushMsg, TargetIden, Push, PushData};
 
 #[derive(Debug, Clone, Deserialize)]
 struct Config {
@@ -37,9 +35,11 @@ fn get_my_ip_address() -> Option<Ipv4Addr> {
 
 fn main() {
     let pbcfg = utils::load_config::<PbConfig>("pushbullet/config.toml").unwrap();
+    let mut pbapi = PbAPI::new(&*pbcfg.access_token);
+
     let config = utils::load_config::<Config>("yadns/config.toml").unwrap();
 
-    let my_ip_addr = env::args().nth(4).or_else(|| get_my_ip_address().map(|v| v.to_string()));
+    let my_ip_addr = env::args().nth(4).or_else(|| get_my_ip_address().map(|v| v.to_string())).unwrap();
 
     let mut yadns = YandexDNS::new(&*config.token);
     let home_record = yadns.send(&ListRequest::new(&*config.domain))
@@ -50,7 +50,7 @@ fn main() {
         Some(rec) => {
             yadns.send(
                 rec.as_edit_req()
-                .content(&*my_ip_addr.unwrap()))
+                .content(&*my_ip_addr))
                 .unwrap();
         },
         None => {
@@ -60,6 +60,19 @@ fn main() {
                 .content("127.0.0.1"))
                 .unwrap();
         },
+    }
+
+
+    let push = PushMsg {
+        title: Some("New home IP address".to_string()),
+        body: Some(my_ip_addr),
+        target: TargetIden::CurrentUser,
+        data: PushData::Note,
+        source_device_iden: pbcfg.device_iden
+    };
+
+    if let Ok(result @ Push {..}) = pbapi.send(&push) {
+        println!("notified with push {}", result.iden);
     }
 }
 

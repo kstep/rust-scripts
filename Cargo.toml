@@ -27,5 +27,5 @@ pocket = "*"
 xdg-basedir = "*"
 log = "*"
 walkdir = "*"
-sendmail = "*"
+lettre = { version = "*", git = "https://github.com/lettre/lettre" }
 yadns = "*"

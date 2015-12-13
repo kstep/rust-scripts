@@ -6,12 +6,15 @@ extern crate pb;
 extern crate script_utils as utils;
 extern crate yadns;
 extern crate serde;
-extern crate sendmail;
+extern crate lettre;
 
 use std::env;
 use std::net::Ipv4Addr;
 use yadns::{YandexDNS, ListRequest, AddRequest, DnsType};
 use pb::{PbAPI, PushMsg, TargetIden, Push, PushData};
+use lettre::transport::smtp::{SmtpTransportBuilder};
+use lettre::transport::EmailTransport;
+use lettre::email::EmailBuilder;
 
 #[derive(Debug, Clone, Deserialize)]
 struct Config {
@@ -63,17 +66,21 @@ fn main() {
         },
     }
 
-    sendmail::email::create(
-        "greybook@home.kstep.me",
-        "me@kstep.me",
-        "New external IP address",
-        &*format!("Hi, Master!
+    if let Ok(mut mailer) = SmtpTransportBuilder::localhost().map(|t| t.build()) {
+        if let Ok(email) = EmailBuilder::new()
+            .from("greybook@home.kstep.me")
+            .to(("me@kstep.me", "Master"))
+            .subject("New external IP address")
+            .body(&*format!("Hi, Master!
 
 Just for your information, my new external IP address is {}.
 
 Regards,
-Greybook.", my_ip_addr)
-        );
+Greybook.", my_ip_addr))
+            .build() {
+                let _ = mailer.send(email);
+            }
+    }
 
     let push = PushMsg {
         title: Some("New home IP address".to_string()),

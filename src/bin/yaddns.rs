@@ -6,6 +6,7 @@ extern crate pb;
 extern crate script_utils as utils;
 extern crate yadns;
 extern crate serde;
+extern crate sendmail;
 
 use std::env;
 use std::net::Ipv4Addr;
@@ -62,6 +63,17 @@ fn main() {
         },
     }
 
+    sendmail::email::create(
+        "greybook@home.kstep.me",
+        "me@kstep.me",
+        "New external IP address",
+        &*format!("Hi, Master!
+
+Just for your information, my new external IP address is {}.
+
+Regards,
+Greybook.", my_ip_addr)
+        );
 
     let push = PushMsg {
         title: Some("New home IP address".to_string()),

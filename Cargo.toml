@@ -28,4 +28,5 @@ pocket = "*"
 xdg-basedir = "*"
 log = "*"
 walkdir = "*"
+sendmail = "*"
 yadns = { path = "../yadns" }

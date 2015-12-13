@@ -12,7 +12,6 @@ dependencies = [
  "pocket 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.1.43 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex_macros 0.1.24 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "sendmail 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 0.6.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",

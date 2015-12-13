@@ -66,22 +66,6 @@ fn main() {
         },
     }
 
-    if let Ok(mut mailer) = SmtpTransportBuilder::localhost().map(|t| t.build()) {
-        if let Ok(email) = EmailBuilder::new()
-            .from("greybook@home.kstep.me")
-            .to(("me@kstep.me", "Master"))
-            .subject("New external IP address")
-            .body(&*format!("Hi, Master!
-
-Just for your information, my new external IP address is {}.
-
-Regards,
-Greybook.", my_ip_addr))
-            .build() {
-                let _ = mailer.send(email);
-            }
-    }
-
     let push = PushMsg {
         title: Some("New home IP address".to_string()),
         body: Some(my_ip_addr),
@@ -90,8 +74,31 @@ Greybook.", my_ip_addr))
         source_device_iden: pbcfg.device_iden
     };
 
-    if let Ok(result @ Push {..}) = pbapi.send(&push) {
-        println!("notified with push {}", result.iden);
+    match pbapi.send(&push) {
+        Ok(Push { iden, .. }) => println!("notified with push {}", iden),
+        Err(err) => {
+            println!("push notification failed with error: {}", err);
+            println!("trying to send email...");
+            if let Ok(mut mailer) = SmtpTransportBuilder::localhost().map(|t| t.build()) {
+                if let Ok(email) = EmailBuilder::new()
+                    .from("greybook@home.kstep.me")
+                    .to(("me@kstep.me", "Master"))
+                    .subject("New external IP address")
+                    .body(&*format!("Hi, Master!
+
+Just for your information, my new external IP address is {}.
+
+Regards,
+Greybook.", my_ip_addr))
+                    .build() {
+                        match mailer.send(email) {
+                            Ok(_) => println!("notified with email to me@kstep.me"),
+                            Err(err) => println!("email notification failed with error: {}", err)
+                        }
+                    }
+            }
+        }
     }
+
 }
 

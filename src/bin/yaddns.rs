@@ -12,20 +12,20 @@ use std::env;
 use std::net::Ipv4Addr;
 use yadns::{YandexDNS, ListRequest, AddRequest, DnsType};
 use pb::{PbAPI, PushMsg, TargetIden, Push, PushData};
-use lettre::transport::smtp::{SmtpTransportBuilder};
+use lettre::transport::smtp::SmtpTransportBuilder;
 use lettre::transport::EmailTransport;
 use lettre::email::EmailBuilder;
 
 #[derive(Debug, Clone, Deserialize)]
 struct Config {
     domain: String,
-    token: String
+    token: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 struct PbConfig {
     access_token: String,
-    device_iden: Option<String>
+    device_iden: Option<String>,
 }
 
 fn get_my_ip_address() -> Option<Ipv4Addr> {
@@ -43,27 +43,30 @@ fn main() {
 
     let config = utils::load_config::<Config>("yadns/config.toml").unwrap();
 
-    let my_ip_addr = env::args().nth(4).or_else(|| get_my_ip_address().map(|v| v.to_string())).unwrap();
+    let my_ip_addr = env::args()
+                         .nth(4)
+                         .or_else(|| get_my_ip_address().map(|v| v.to_string()))
+                         .unwrap();
 
     let mut yadns = YandexDNS::new(&*config.token);
     let home_record = yadns.send(&ListRequest::new(&*config.domain))
-        .unwrap().records.into_iter()
-        .find(|rec| rec.kind == DnsType::A && rec.subdomain == "home");
+                           .unwrap()
+                           .records
+                           .into_iter()
+                           .find(|rec| rec.kind == DnsType::A && rec.subdomain == "home");
 
     match home_record {
         Some(rec) => {
-            yadns.send(
-                rec.as_edit_req()
-                .content(&*my_ip_addr))
-                .unwrap();
-        },
+            yadns.send(rec.as_edit_req()
+                          .content(&*my_ip_addr))
+                 .unwrap();
+        }
         None => {
-            yadns.send(
-                AddRequest::new(DnsType::A, &*config.domain)
-                .subdomain("home")
-                .content("127.0.0.1"))
-                .unwrap();
-        },
+            yadns.send(AddRequest::new(DnsType::A, &*config.domain)
+                           .subdomain("home")
+                           .content("127.0.0.1"))
+                 .unwrap();
+        }
     }
 
     let push = PushMsg {
@@ -71,7 +74,7 @@ fn main() {
         body: Some(my_ip_addr),
         target: TargetIden::CurrentUser,
         data: PushData::Note,
-        source_device_iden: pbcfg.device_iden
+        source_device_iden: pbcfg.device_iden,
     };
 
     match pbapi.send(&push) {
@@ -81,24 +84,26 @@ fn main() {
             println!("trying to send email...");
             if let Ok(mut mailer) = SmtpTransportBuilder::localhost().map(|t| t.build()) {
                 if let Ok(email) = EmailBuilder::new()
-                    .from("greybook@home.kstep.me")
-                    .to(("me@kstep.me", "Master"))
-                    .subject("New external IP address")
-                    .body(&*format!("Hi, Master!
+                                       .from("greybook@home.kstep.me")
+                                       .to(("me@kstep.me", "Master"))
+                                       .subject("New external IP address")
+                                       .body(&*format!("Hi, Master!
 
-Just for your information, my new external IP address is {}.
+Just for your \
+                                                        information, my new external IP \
+                                                        address is {}.
 
 Regards,
-Greybook.", my_ip_addr))
-                    .build() {
-                        match mailer.send(email) {
-                            Ok(_) => println!("notified with email to me@kstep.me"),
-                            Err(err) => println!("email notification failed with error: {}", err)
-                        }
+Greybook.",
+                                                       my_ip_addr))
+                                       .build() {
+                    match mailer.send(email) {
+                        Ok(_) => println!("notified with email to me@kstep.me"),
+                        Err(err) => println!("email notification failed with error: {}", err),
                     }
+                }
             }
         }
     }
 
 }
-

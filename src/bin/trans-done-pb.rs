@@ -11,7 +11,7 @@ use std::env;
 #[derive(Deserialize)]
 struct Config {
     access_token: String,
-    device_iden: Option<String>
+    device_iden: Option<String>,
 }
 
 fn main() {
@@ -24,10 +24,9 @@ fn main() {
         body: Some(format!("{} downloaded to {}", torrent_name, torrent_dir)),
         target: TargetIden::CurrentUser,
         data: PushData::Note,
-        source_device_iden: pbcfg.device_iden
+        source_device_iden: pbcfg.device_iden,
     };
 
     let result: Push = api.send(&push).unwrap();
     println!("notified with push {}", result.iden);
 }
-

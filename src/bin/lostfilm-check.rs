@@ -34,7 +34,8 @@ use xml::reader::{EventReader, XmlEvent};
 use xml::name::OwnedName;
 use pb::{PbAPI, PushMsg, TargetIden, Push, PushData};
 
-static USER_AGENT: &'static str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36";
+static USER_AGENT: &'static str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
+                                   like Gecko) Chrome/33.0.1750.152 Safari/537.36";
 static TRANSMISSION_URL: &'static str = "http://localhost:9091/transmission/rpc";
 static BASE_URL: &'static str = "http://www.lostfilm.tv/";
 static LOGIN_URL: &'static str = "http://login1.bogi.ru/login.php";
@@ -45,24 +46,24 @@ struct Config {
     exclude: Vec<String>,
     username: String,
     password: String,
-    download_dir: Option<String>
+    download_dir: Option<String>,
 }
 
 #[derive(Deserialize)]
 struct PbConfig {
     access_token: String,
-    device_iden: Option<String>
+    device_iden: Option<String>,
 }
 
 fn notify(api: &mut PbAPI, device_iden: Option<String>, title: &str, url: &str) {
-    println!("added torrent {}: {}",  title, url);
+    println!("added torrent {}: {}", title, url);
 
     let push = PushMsg {
         title: Some("New LostFilm release".to_string()),
         body: Some(title.to_string()),
         target: TargetIden::CurrentUser,
         data: PushData::Link(Url::parse(url).ok()),
-        source_device_iden: device_iden
+        source_device_iden: device_iden,
     };
 
     if let Ok(result @ Push {..}) = api.send(&push) {
@@ -105,14 +106,19 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
     debug!("running first stage...");
     client.set_redirect_policy(RedirectPolicy::FollowAll);
     let mut response = client.post(url)
-        .body(&*data)
-        .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
-        .header(UserAgent(USER_AGENT.to_string()))
-        .header(Referer(BASE_URL.to_string()))
-        .send()
-        .unwrap();
+                             .body(&*data)
+                             .header(ContentType("application/x-www-form-urlencoded"
+                                                     .parse()
+                                                     .unwrap()))
+                             .header(UserAgent(USER_AGENT.to_string()))
+                             .header(Referer(BASE_URL.to_string()))
+                             .send()
+                             .unwrap();
 
-    response.headers.get::<SetCookie>().expect("no login cookies").apply_to_cookie_jar(&mut cookie_jar);
+    response.headers
+            .get::<SetCookie>()
+            .expect("no login cookies")
+            .apply_to_cookie_jar(&mut cookie_jar);
 
     let decoded_body = {
         let mut buf = Vec::new();
@@ -120,22 +126,30 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
         WINDOWS_1251.decode(&*buf, DecoderTrap::Replace).unwrap()
     };
 
-    let action = parser.parse(action_re.captures(&*decoded_body).expect("no action URL found in login form").at(1).unwrap()).unwrap();
-    let form = form_urlencoded::serialize(input_re.captures_iter(&*decoded_body).map(|c| (c.at(1).unwrap(), c.at(2).unwrap())));
+    let action = parser.parse(action_re.captures(&*decoded_body)
+                                       .expect("no action URL found in login form")
+                                       .at(1)
+                                       .unwrap())
+                       .unwrap();
+    let form = form_urlencoded::serialize(input_re.captures_iter(&*decoded_body)
+                                                  .map(|c| (c.at(1).unwrap(), c.at(2).unwrap())));
     debug!("got second stage form: {} {:?}", action, form);
 
     debug!("running second stage...");
     client.set_redirect_policy(RedirectPolicy::FollowNone);
     let response = client.post(action)
-        .body(&*form)
-        .header(Cookie::from_cookie_jar(&cookie_jar))
-        .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
-        .header(UserAgent(USER_AGENT.to_string()))
-        .header(Referer(LOGIN_URL.to_string()))
-        .send()
-        .unwrap();
+                         .body(&*form)
+                         .header(Cookie::from_cookie_jar(&cookie_jar))
+                         .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
+                         .header(UserAgent(USER_AGENT.to_string()))
+                         .header(Referer(LOGIN_URL.to_string()))
+                         .send()
+                         .unwrap();
 
-    response.headers.get::<SetCookie>().expect("not session cookies").apply_to_cookie_jar(&mut cookie_jar);
+    response.headers
+            .get::<SetCookie>()
+            .expect("not session cookies")
+            .apply_to_cookie_jar(&mut cookie_jar);
     debug!("logged in as {}", login);
 
     cookie_jar
@@ -146,10 +160,13 @@ enum RssState {
     InChannel,
     InItem,
     InTitle,
-    InLink
+    InLink,
 }
 
-fn get_torrent_urls(cookie_jar: &CookieJar, include: &[String], exclude: &[String]) -> Vec<(String, String)> {
+fn get_torrent_urls(cookie_jar: &CookieJar,
+                    include: &[String],
+                    exclude: &[String])
+                    -> Vec<(String, String)> {
     debug!("trying to get RSS feed...");
     let url = format!("{}{}", BASE_URL, "rssdd.xml");
 
@@ -157,11 +174,11 @@ fn get_torrent_urls(cookie_jar: &CookieJar, include: &[String], exclude: &[Strin
     let mut body = Vec::new();
     let client = Client::new();
     client.get(&*url)
-        .header(UserAgent(USER_AGENT.to_string()))
-        .send()
-        .unwrap()
-        .read_to_end(&mut body)
-        .unwrap();
+          .header(UserAgent(USER_AGENT.to_string()))
+          .send()
+          .unwrap()
+          .read_to_end(&mut body)
+          .unwrap();
 
     debug!("parsing response...");
     let decoded_body = WINDOWS_1251.decode(&*body, DecoderTrap::Replace).unwrap();
@@ -174,35 +191,41 @@ fn get_torrent_urls(cookie_jar: &CookieJar, include: &[String], exclude: &[Strin
 
     for ev in reader {
         match ev.unwrap() {
-            XmlEvent::StartElement { name: OwnedName { ref local_name, .. }, .. } => match (&state, &**local_name) {
-                (&RssState::Init, "channel") => state = RssState::InChannel,
-                (&RssState::InChannel, "item") => state = RssState::InItem,
-                (&RssState::InItem, "title") => state = RssState::InTitle,
-                (&RssState::InItem, "link") => state = RssState::InLink,
-                _ => ()
-            },
-            XmlEvent::EndElement { name: OwnedName { ref local_name, .. } } => match (&state, &**local_name) {
-                (&RssState::InChannel, "channel") => state = RssState::Init,
-                (&RssState::InItem, "item") => state = RssState::InChannel,
-                (&RssState::InTitle, "title") => state = RssState::InItem,
-                (&RssState::InLink, "link") => state = RssState::InItem,
-                _ => ()
-            },
-            XmlEvent::Characters(ref value) => match state {
-                RssState::InTitle => {
-                    needed = include.iter().find(|v| value.contains(&***v)).is_some()
-                         && !exclude.iter().find(|v| value.contains(&***v)).is_some();
+            XmlEvent::StartElement { name: OwnedName { ref local_name, .. }, .. } => {
+                match (&state, &**local_name) {
+                    (&RssState::Init, "channel") => state = RssState::InChannel,
+                    (&RssState::InChannel, "item") => state = RssState::InItem,
+                    (&RssState::InItem, "title") => state = RssState::InTitle,
+                    (&RssState::InItem, "link") => state = RssState::InLink,
+                    _ => (),
+                }
+            }
+            XmlEvent::EndElement { name: OwnedName { ref local_name, .. } } => {
+                match (&state, &**local_name) {
+                    (&RssState::InChannel, "channel") => state = RssState::Init,
+                    (&RssState::InItem, "item") => state = RssState::InChannel,
+                    (&RssState::InTitle, "title") => state = RssState::InItem,
+                    (&RssState::InLink, "link") => state = RssState::InItem,
+                    _ => (),
+                }
+            }
+            XmlEvent::Characters(ref value) => {
+                match state {
+                    RssState::InTitle => {
+                        needed = include.iter().find(|v| value.contains(&***v)).is_some() &&
+                                 !exclude.iter().find(|v| value.contains(&***v)).is_some();
 
-                    if needed {
-                        title = value.clone();
+                        if needed {
+                            title = value.clone();
+                        }
                     }
-                },
-                RssState::InLink if needed => {
-                    result.push((title.clone(), extract_torrent_link(cookie_jar, value.replace("/download.php?", "/details.php?").rsplitn(1, '&').last().expect("torrent URL parse failed"))));
-                },
-                _ => ()
-            },
-            _ => ()
+                    RssState::InLink if needed => {
+                        result.push((title.clone(), extract_torrent_link(cookie_jar, value.replace("/download.php?", "/details.php?").rsplitn(1, '&').last().expect("torrent URL parse failed"))));
+                    }
+                    _ => (),
+                }
+            }
+            _ => (),
         }
     }
 
@@ -214,42 +237,45 @@ fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
     debug!("extracting torrent link for {}", details_url);
     let a_download_tag_re = regex!(r#"<a href="javascript:\{\};" onMouseOver="setCookie\('(\w+)','([a-f0-9]+)'\)" class="a_download" onClick="ShowAllReleases\('([0-9]+)','([0-9.]+)','([0-9]+)'\)"></a>"#);
     let torrent_link_re = regex!(r#"href="(http://tracktor\.in/td\.php\?s=[^"]+)""#);
-    
+
     let mut client = Client::new();
     client.set_redirect_policy(RedirectPolicy::FollowAll);
 
     debug!("fetching details page...");
     let mut body = Vec::new();
     client.get(details_url)
-        .header(Cookie::from_cookie_jar(cookie_jar))
-        .header(UserAgent(USER_AGENT.to_string()))
-        .header(Referer(BASE_URL.to_string()))
-        .send()
-        .unwrap()
-        .read_to_end(&mut body)
-        .unwrap();
+          .header(Cookie::from_cookie_jar(cookie_jar))
+          .header(UserAgent(USER_AGENT.to_string()))
+          .header(Referer(BASE_URL.to_string()))
+          .send()
+          .unwrap()
+          .read_to_end(&mut body)
+          .unwrap();
 
     debug!("parsing details page...");
     let decoded_body = WINDOWS_1251.decode(&*body, DecoderTrap::Replace).unwrap();
 
     let a_download_tag = a_download_tag_re.captures(&*decoded_body).unwrap();
-    let (href, cookie_name, cookie_value) = (
-        format!("{}nrdr.php?c={}&s={}&e={}", BASE_URL, a_download_tag.at(3).unwrap(), a_download_tag.at(4).unwrap(), a_download_tag.at(5).unwrap()),
-        format!("{}_2", a_download_tag.at(1).unwrap()),
-        a_download_tag.at(2).unwrap().to_string());
+    let (href, cookie_name, cookie_value) = (format!("{}nrdr.php?c={}&s={}&e={}",
+                                                     BASE_URL,
+                                                     a_download_tag.at(3).unwrap(),
+                                                     a_download_tag.at(4).unwrap(),
+                                                     a_download_tag.at(5).unwrap()),
+                                             format!("{}_2", a_download_tag.at(1).unwrap()),
+                                             a_download_tag.at(2).unwrap().to_string());
 
     cookie_jar.add(CookiePair::new(cookie_name, cookie_value));
 
     debug!("fetching tracker page...");
     let mut body = Vec::new();
     client.get(&*href)
-        .header(Cookie::from_cookie_jar(cookie_jar))
-        .header(UserAgent(USER_AGENT.to_string()))
-        .header(Referer(details_url.to_string()))
-        .send()
-        .unwrap()
-        .read_to_end(&mut body)
-        .unwrap();
+          .header(Cookie::from_cookie_jar(cookie_jar))
+          .header(UserAgent(USER_AGENT.to_string()))
+          .header(Referer(details_url.to_string()))
+          .send()
+          .unwrap()
+          .read_to_end(&mut body)
+          .unwrap();
 
     debug!("parsing tracker page...");
     let decoded_body = WINDOWS_1251.decode(&*body, DecoderTrap::Replace).unwrap();
@@ -258,7 +284,7 @@ fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
 
 struct TransmissionAPI {
     token: TransmissionSessionId,
-    tag: u32
+    tag: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -286,7 +312,7 @@ impl TransmissionAPI {
     pub fn new() -> TransmissionAPI {
         TransmissionAPI {
             token: TransmissionSessionId(String::new()),
-            tag: 0
+            tag: 0,
         }
     }
 
@@ -300,11 +326,11 @@ impl TransmissionAPI {
 
             let resp = format!(r#"{{"tag":"{}","method":"torrent-add","arguments":{{"filename":"{}","download-dir":"{}"}}}}"#, self.tag, url, download_dir.unwrap_or(""));
             let mut resp = client.post(TRANSMISSION_URL)
-                .body(&*resp)
-                .header(self.token.clone())
-                .header(ContentType("application/json".parse().unwrap()))
-                .send()
-                .unwrap();
+                                 .body(&*resp)
+                                 .header(self.token.clone())
+                                 .header(ContentType("application/json".parse().unwrap()))
+                                 .send()
+                                 .unwrap();
 
             match resp.status {
                 StatusCode::Ok => {
@@ -312,11 +338,11 @@ impl TransmissionAPI {
                     let mut buf = String::new();
                     resp.read_to_string(&mut buf).unwrap();
                     return buf.contains("torrent-added");
-                },
+                }
                 StatusCode::Conflict => {
                     debug!("session id update");
                     self.token = resp.headers.get::<TransmissionSessionId>().unwrap().clone();
-                },
+                }
                 code @ _ => {
                     panic!("unexpected error code {} for torrent {}", code, url);
                 }
@@ -331,7 +357,8 @@ fn main() {
     let download_dir = config.download_dir.as_ref().map(|v| &**v);
 
     debug!("2. initializing api objects...");
-    let pbcfg = utils::load_config::<PbConfig>("pushbullet/config.toml").expect("pushbullet config missing");
+    let pbcfg = utils::load_config::<PbConfig>("pushbullet/config.toml")
+                    .expect("pushbullet config missing");
     let mut pbapi = PbAPI::new(&*pbcfg.access_token);
     let mut trans = TransmissionAPI::new();
 

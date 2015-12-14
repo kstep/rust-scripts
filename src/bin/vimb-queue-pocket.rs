@@ -22,7 +22,11 @@ fn main() {
     let config: Creds = utils::load_config("pocket/creds.toml").expect("config file load error");
     let mut pocket = Pocket::new(&*config.consumer_key, Some(&*config.access_token));
 
-    let queue = xdg::get_config_dirs().into_iter().filter(|p| p.exists()).next().expect("no vimb config found");
+    let queue = xdg::get_config_dirs()
+                    .into_iter()
+                    .filter(|p| p.exists())
+                    .next()
+                    .expect("no vimb config found");
 
     let mut inotify = INotify::init().unwrap();
     inotify.add_watch(&queue, ffi::IN_CLOSE_WRITE).unwrap();
@@ -34,7 +38,7 @@ fn main() {
         for line in reader.lines() {
             match pocket.push(&*line.unwrap().trim()) {
                 Ok(item) => println!("added url {}", item.given_url),
-                Err(err) => println!("error: {:?}", err)
+                Err(err) => println!("error: {:?}", err),
             }
         }
     }

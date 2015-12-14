@@ -14,7 +14,7 @@ use walkdir::WalkDir;
 struct NginxCacheHeader {
     unknown: [u8; 24],
     magic: u32, // '\nKEY'
-    delim: u16 // ': '
+    delim: u16, // ': '
 }
 // or maybe { unknown: [u8; 22], magic: u64 ('\0\0\nKEY: ') }
 const HEADER_SIZE: usize = 32;
@@ -26,25 +26,36 @@ impl NginxCacheHeader {
 }
 
 fn main() {
-    let args : Vec<String> = env::args().collect();
-    let root = Path::new(if args.len() < 2 { "/var/lib/nginx/cache" } else { &*args[1] });
+    let args: Vec<String> = env::args().collect();
+    let root = Path::new(if args.len() < 2 {
+        "/var/lib/nginx/cache"
+    } else {
+        &*args[1]
+    });
     let files = WalkDir::new(&root)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_file())
-        .map(|e| e.path().to_owned())
-        .filter_map(|p| File::open(&p).ok().map(|f| BufReader::new(f))
-                    .and_then(|mut f| {
-                        let mut buf = [0u8; HEADER_SIZE];
-                        f.read(&mut buf).unwrap();
-                        let hdr: NginxCacheHeader = unsafe { transmute(buf) };
-                        if hdr.check_magic() {
-                            let mut u = String::new();
-                            f.read_line(&mut u).ok().and_then(|_| Url::parse(&*u).ok()).map(|u| (p, u))
-                        } else {
-                            None
-                        }
-                    }));
+                    .into_iter()
+                    .filter_map(|e| e.ok())
+                    .filter(|e| e.file_type().is_file())
+                    .map(|e| e.path().to_owned())
+                    .filter_map(|p| {
+                        File::open(&p)
+                            .ok()
+                            .map(|f| BufReader::new(f))
+                            .and_then(|mut f| {
+                                let mut buf = [0u8; HEADER_SIZE];
+                                f.read(&mut buf).unwrap();
+                                let hdr: NginxCacheHeader = unsafe { transmute(buf) };
+                                if hdr.check_magic() {
+                                    let mut u = String::new();
+                                    f.read_line(&mut u)
+                                     .ok()
+                                     .and_then(|_| Url::parse(&*u).ok())
+                                     .map(|u| (p, u))
+                                } else {
+                                    None
+                                }
+                            })
+                    });
 
     for f in files {
         match f {
@@ -52,4 +63,3 @@ fn main() {
         }
     }
 }
-

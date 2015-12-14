@@ -21,7 +21,7 @@ use encoding::all::WINDOWS_1251;
 use std::process::exit;
 use std::env;
 use std::fmt;
-use std::io::{Read};
+use std::io::Read;
 
 #[cfg(test)]
 use test::Bencher;
@@ -32,7 +32,7 @@ struct AcctInfo {
     account: i32,
     days: i32,
     price: i32,
-    credit: Option<i32>
+    credit: Option<i32>,
 }
 
 impl fmt::Display for AcctInfo {
@@ -51,20 +51,24 @@ impl fmt::Display for AcctInfo {
 #[derive(Deserialize, Debug, Clone)]
 struct Creds {
     username: String,
-    password: String
+    password: String,
 }
 
 fn enable_credit(creds: Creds) -> Result<bool> {
     let client = Client::new();
     client.get("https://www.adsl.by/credit.js?credit=on")
-        .header(Authorization(Basic { username: creds.username, password: Some(creds.password) }))
-        .header(Referer("https://www.adsl.by".into()))
-        .send()
-        .and_then(|mut resp| {
-            let mut buf = String::new();
-            resp.read_to_string(&mut buf).map_err(::hyper::error::Error::Io)
-                .map(|_| buf.contains("stat: 'Включен'"))
-        })
+          .header(Authorization(Basic {
+              username: creds.username,
+              password: Some(creds.password),
+          }))
+          .header(Referer("https://www.adsl.by".into()))
+          .send()
+          .and_then(|mut resp| {
+              let mut buf = String::new();
+              resp.read_to_string(&mut buf)
+                  .map_err(::hyper::error::Error::Io)
+                  .map(|_| buf.contains("stat: 'Включен'"))
+          })
 }
 
 const EXIT_ENABLED: i32 = 0;
@@ -87,21 +91,26 @@ fn main() {
     };
 
     let client = Client::new();
-    //client.set_ssl_verifier(Box::new(utils::permissive_ssl_checker));
+    // client.set_ssl_verifier(Box::new(utils::permissive_ssl_checker));
 
     let buf = match client.get("https://www.adsl.by/001.htm")
-        .header(Authorization(Basic { username: config.username.clone(), password: Some(config.password.clone()) }))
-        .send()
-        .and_then(|mut resp| {
-            let mut buf = Vec::new();
-            resp.read_to_end(&mut buf).map(|_| buf).map_err(::hyper::error::Error::Io)
-        }) {
-            Ok(buf) => buf,
-            Err(err) => {
-                println!("Error requesting account stats: {}", err);
-                exit(EXIT_ERROR);
-            }
-        };
+                          .header(Authorization(Basic {
+                              username: config.username.clone(),
+                              password: Some(config.password.clone()),
+                          }))
+                          .send()
+                          .and_then(|mut resp| {
+                              let mut buf = Vec::new();
+                              resp.read_to_end(&mut buf)
+                                  .map(|_| buf)
+                                  .map_err(::hyper::error::Error::Io)
+                          }) {
+        Ok(buf) => buf,
+        Err(err) => {
+            println!("Error requesting account stats: {}", err);
+            exit(EXIT_ERROR);
+        }
+    };
 
     let cont = match WINDOWS_1251.decode(&*buf, DecoderTrap::Replace) {
         Ok(res) => res,
@@ -112,12 +121,18 @@ fn main() {
     };
 
     let acct = AcctInfo {
-            enabled: state_re.is_match(&*cont),
-            account: account_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.replace(" ", "").parse().ok())).unwrap_or(0),
-            days: days_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse().ok())).unwrap_or(0),
-            price: price_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse().ok())).unwrap_or(0),
-            credit: credit_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse().ok()))
-        };
+        enabled: state_re.is_match(&*cont),
+        account: account_re.captures(&*cont)
+                           .and_then(|c| c.at(1).and_then(|v| v.replace(" ", "").parse().ok()))
+                           .unwrap_or(0),
+        days: days_re.captures(&*cont)
+                     .and_then(|c| c.at(1).and_then(|v| v.parse().ok()))
+                     .unwrap_or(0),
+        price: price_re.captures(&*cont)
+                       .and_then(|c| c.at(1).and_then(|v| v.parse().ok()))
+                       .unwrap_or(0),
+        credit: credit_re.captures(&*cont).and_then(|c| c.at(1).and_then(|v| v.parse().ok())),
+    };
 
     println!("{}", acct);
 
@@ -126,9 +141,18 @@ fn main() {
     } else {
         if env::args().position(|arg| arg == "credit").is_some() {
             match enable_credit(config) {
-                Ok(true) => { println!("Credit was enabled."); EXIT_ENABLED },
-                Ok(false) => { println!("Credit was not enabled."); EXIT_DISABLED },
-                Err(err) => { println!("Error enabling credit: {}", err); EXIT_ERROR },
+                Ok(true) => {
+                    println!("Credit was enabled.");
+                    EXIT_ENABLED
+                }
+                Ok(false) => {
+                    println!("Credit was not enabled.");
+                    EXIT_DISABLED
+                }
+                Err(err) => {
+                    println!("Error enabling credit: {}", err);
+                    EXIT_ERROR
+                }
             }
         } else {
             EXIT_DISABLED
@@ -139,7 +163,5 @@ fn main() {
 #[bench]
 #[ignore]
 fn bench_main(b: &mut Bencher) {
-    b.iter(|| {
-        main()
-    });
+    b.iter(|| main());
 }

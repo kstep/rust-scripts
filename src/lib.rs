@@ -8,13 +8,15 @@ use std::fs::File;
 use std::io::Read;
 
 pub fn load_config<C: Deserialize>(filename: &str) -> Option<C> {
-    xdg::get_config_dirs().into_iter()
-        .filter_map(|p| File::open(p.join(filename)).ok()).next()
+    xdg::get_config_dirs()
+        .into_iter()
+        .filter_map(|p| File::open(p.join(filename)).ok())
+        .next()
         .and_then(|mut f| {
             let mut buf = String::new();
             match f.read_to_string(&mut buf) {
                 Ok(_) => toml::decode_str(&buf),
-                _ => None
+                _ => None,
             }
         })
 }

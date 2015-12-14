@@ -29,3 +29,4 @@ log = "*"
 walkdir = "*"
 lettre = { version = "*", git = "https://github.com/lettre/lettre" }
 yadns = "*"
+vkrs = "*"

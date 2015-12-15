@@ -64,14 +64,15 @@ fn main() {
         None => {
             yadns.send(AddRequest::new(DnsType::A, &*config.domain)
                            .subdomain("home")
-                           .content("127.0.0.1"))
+                           .content(&*my_ip_addr))
                  .unwrap();
         }
     }
 
     let push = PushMsg {
         title: Some("New home IP address".to_string()),
-        body: Some(my_ip_addr),
+        // TODO: this clone is not really necessary most of time
+        body: Some(my_ip_addr.clone()),
         target: TargetIden::CurrentUser,
         data: PushData::Note,
         source_device_iden: pbcfg.device_iden,

@@ -3,7 +3,6 @@
 #![plugin(serde_macros)]
 
 extern crate encoding;
-
 extern crate hyper;
 extern crate cookie;
 extern crate url;

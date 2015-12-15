@@ -30,7 +30,7 @@ struct PbConfig {
 
 fn get_my_ip_address() -> Option<Ipv4Addr> {
     use std::net::{TcpStream, SocketAddr};
-    let addr = TcpStream::connect("8.8.8.8:53").and_then(|s| s.local_addr());
+    let addr = TcpStream::connect(("8.8.8.8", 53)).and_then(|s| s.local_addr());
     match addr {
         Ok(SocketAddr::V4(addr)) => Some(*addr.ip()),
         _ => None,

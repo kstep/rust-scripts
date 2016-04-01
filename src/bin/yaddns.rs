@@ -19,6 +19,7 @@ use lettre::email::EmailBuilder;
 #[derive(Debug, Clone, Deserialize)]
 struct Config {
     domain: String,
+    subdomain: String,
     token: String,
 }
 
@@ -53,7 +54,7 @@ fn main() {
                            .unwrap()
                            .records
                            .into_iter()
-                           .find(|rec| rec.kind == DnsType::A && rec.subdomain == "home");
+                           .find(|rec| rec.kind == DnsType::A && rec.subdomain == config.subdomain);
 
     match home_record {
         Some(rec) => {
@@ -63,14 +64,14 @@ fn main() {
         }
         None => {
             yadns.send(AddRequest::new(DnsType::A, &*config.domain)
-                           .subdomain("home")
+                           .subdomain(&*config.subdomain)
                            .content(&*my_ip_addr))
                  .unwrap();
         }
     }
 
     let push = PushMsg {
-        title: Some("New home IP address".to_string()),
+        title: Some(String::new("New home IP address")),
         // TODO: this clone is not really necessary most of time
         body: Some(my_ip_addr.clone()),
         target: TargetIden::CurrentUser,

@@ -43,20 +43,60 @@ fn ismount(dir: &str) -> bool {
 
 }
 
-fn systemd_encode(inp: &str) -> String {
-    let mut out = String::new();
-    for &b in inp.as_bytes().iter() {
-        if ('a' as u8) <= b && b <= ('z' as u8) || ('A' as u8) <= b && b <= ('Z' as u8) ||
-           ('0' as u8) <= b && b <= ('9' as u8) || b == ('_' as u8) {
-            unsafe {
-                out.as_mut_vec().push(b);
-            }
-        } else {
-            out.push_str(r"\x");
-            out.push_str(&*format!("{:02x}", b));
+struct SystemdEscape<I: Iterator<Item=u8>> {
+    iter: I,
+    buf: Option<[u8; 3]>,
+    idx: i8,
+}
+
+impl<I: Iterator<Item=u8>> SystemdEscape<I> {
+    fn new<II: IntoIterator<Item=u8, IntoIter=I>>(iter: II) -> SystemdEscape<I> {
+        SystemdEscape {
+            iter: iter.into_iter(),
+            buf: None,
+            idx: 0,
         }
     }
-    out
+
+    fn hex(x: u8) -> u8 {
+        match x {
+            0x0...0x9 => x | 0x30,
+            0xa...0xf => x + 0x57,
+            _ => unreachable!()
+        }
+    }
+}
+
+impl<I: Iterator<Item=u8>> Iterator for SystemdEscape<I> {
+    type Item = char;
+    fn next(&mut self) -> Option<char> {
+        match self.buf {
+            Some(cs) if self.idx < 2 => {
+                self.idx += 1;
+                return Some(cs[self.idx as usize] as char);
+            }
+            Some(_) => {
+                self.buf = None;
+            }
+            None => ()
+        }
+
+        match self.iter.next() {
+            None => None,
+            Some(c) => match c {
+                b'a'...b'z' | b'A'...b'Z' | b'0'...b'9' | b'_' => Some(c as char),
+                _ => {
+                    self.buf = Some([b'x', Self::hex((c & 0xf0) >> 4), Self::hex(c & 0x0f)]);
+                    self.idx = -1;
+                    Some('\\')
+                }
+            }
+        }
+    }
+}
+
+fn systemd_encode(inp: &str) -> String {
+    SystemdEscape::new(inp.as_bytes().into_iter().cloned()).collect()
 }
 
 fn main() {

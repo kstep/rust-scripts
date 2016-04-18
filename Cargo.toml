@@ -22,11 +22,11 @@ serde = "0.7.0"
 serde_json = "0.7.0"
 time = "0.1.35"
 url = "0.5.9"
-vkrs = "0.6.1"
+vkrs = "0.6.2"
 walkdir = "0.1.5"
 xdg-basedir = "1.0.0"
 xml-rs = "0.3.0"
-yadns = "0.1.0"
+yadns = "0.2.1"
 
 [dependencies.toml]
 default-features = false

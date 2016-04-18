@@ -1,7 +1,3 @@
-#![feature(custom_derive, plugin)]
-#![plugin(regex_macros)]
-#![plugin(serde_macros)]
-
 extern crate encoding;
 extern crate hyper;
 extern crate cookie;
@@ -31,6 +27,7 @@ use cookie::Cookie as CookiePair;
 use url::{Url, UrlParser, form_urlencoded};
 use xml::reader::{EventReader, XmlEvent};
 use xml::name::OwnedName;
+use regex::Regex;
 use pb::{PbAPI, PushMsg, TargetIden, Push, PushData};
 
 static USER_AGENT: &'static str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, \
@@ -39,20 +36,7 @@ static TRANSMISSION_URL: &'static str = "http://localhost:9091/transmission/rpc"
 static BASE_URL: &'static str = "http://www.lostfilm.tv/";
 static LOGIN_URL: &'static str = "http://login1.bogi.ru/login.php";
 
-#[derive(Deserialize)]
-struct Config {
-    include: Vec<String>,
-    exclude: Vec<String>,
-    username: String,
-    password: String,
-    download_dir: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct PbConfig {
-    access_token: String,
-    device_iden: Option<String>,
-}
+include!(concat!(env!("OUT_DIR"), "/lostfilm-check.rs"));
 
 fn notify(api: &mut PbAPI, device_iden: Option<String>, title: &str, url: &str) {
     println!("added torrent {}: {}", title, url);
@@ -95,8 +79,8 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
         "act" => "login"
     ].into_iter());
 
-    let input_re = regex!("<input .*?name=\"(\\w+)\" .*?value=\"([^\"]*)\"");
-    let action_re = regex!("action=\"([^\"]+)\"");
+    let input_re = Regex::new("<input .*?name=\"(\\w+)\" .*?value=\"([^\"]*)\"");
+    let action_re = Regex::new("action=\"([^\"]+)\"");
 
     let mut cookie_jar = CookieJar::new(b"3b53fc89707a78fae45eeafff931f054");
 
@@ -234,8 +218,8 @@ fn get_torrent_urls(cookie_jar: &CookieJar,
 
 fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
     debug!("extracting torrent link for {}", details_url);
-    let a_download_tag_re = regex!(r#"<a href="javascript:\{\};" onMouseOver="setCookie\('(\w+)','([a-f0-9]+)'\)" class="a_download" onClick="ShowAllReleases\('([0-9]+)','([0-9.]+)','([0-9]+)'\)"></a>"#);
-    let torrent_link_re = regex!(r#"href="(http://tracktor\.in/td\.php\?s=[^"]+)""#);
+    let a_download_tag_re = Regex::new(r#"<a href="javascript:\{\};" onMouseOver="setCookie\('(\w+)','([a-f0-9]+)'\)" class="a_download" onClick="ShowAllReleases\('([0-9]+)','([0-9.]+)','([0-9]+)'\)"></a>"#);
+    let torrent_link_re = Regex::new(r#"href="(http://tracktor\.in/td\.php\?s=[^"]+)""#);
 
     let mut client = Client::new();
     client.set_redirect_policy(RedirectPolicy::FollowAll);

@@ -1,0 +1,6 @@
+#[derive(Deserialize)]
+struct Creds {
+    consumer_key: String,
+    access_token: String,
+}
+

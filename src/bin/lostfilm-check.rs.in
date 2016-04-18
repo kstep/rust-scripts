@@ -1,0 +1,15 @@
+#[derive(Deserialize)]
+struct Config {
+    include: Vec<String>,
+    exclude: Vec<String>,
+    username: String,
+    password: String,
+    download_dir: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct PbConfig {
+    access_token: String,
+    device_iden: Option<String>,
+}
+

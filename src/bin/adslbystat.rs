@@ -1,7 +1,4 @@
-#![feature(custom_derive, plugin)]
 #![cfg_attr(test, feature(test))]
-#![plugin(regex_macros)]
-#![plugin(serde_macros)]
 
 #[cfg(test)]
 extern crate test;
@@ -48,11 +45,7 @@ impl fmt::Display for AcctInfo {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
-struct Creds {
-    username: String,
-    password: String,
-}
+include!(concat!(env!("OUT_DIR"), "/adslbystat.rs"));
 
 fn enable_credit(creds: Creds) -> Result<bool> {
     let client = Client::new();

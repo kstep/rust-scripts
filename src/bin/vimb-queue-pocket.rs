@@ -1,6 +1,3 @@
-#![feature(custom_derive, plugin)]
-#![plugin(serde_macros)]
-
 extern crate pocket;
 extern crate inotify;
 extern crate xdg_basedir as xdg;
@@ -12,11 +9,7 @@ use inotify::{INotify, ffi};
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 
-#[derive(Deserialize)]
-struct Creds {
-    consumer_key: String,
-    access_token: String,
-}
+include!(concat!(env!("OUT_DIR"), "/vimb-queue-pocket.rs"));
 
 fn main() {
     let config: Creds = utils::load_config("pocket/creds.toml").expect("config file load error");

@@ -1,7 +1,3 @@
-#![feature(custom_derive, plugin)]
-#![feature(custom_attribute)]
-#![plugin(serde_macros)]
-
 extern crate pb;
 extern crate script_utils as utils;
 extern crate yadns;
@@ -16,18 +12,7 @@ use lettre::transport::smtp::SmtpTransportBuilder;
 use lettre::transport::EmailTransport;
 use lettre::email::EmailBuilder;
 
-#[derive(Debug, Clone, Deserialize)]
-struct Config {
-    domain: String,
-    subdomain: String,
-    token: String,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct PbConfig {
-    access_token: String,
-    device_iden: Option<String>,
-}
+include!(concat!(env!("OUT_DIR"), "/yaddns.rs"));
 
 fn get_my_ip_address() -> Option<Ipv4Addr> {
     use std::net::{TcpStream, SocketAddr};

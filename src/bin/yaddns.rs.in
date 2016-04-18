@@ -1,0 +1,12 @@
+#[derive(Debug, Clone, Deserialize)]
+struct Config {
+    domain: String,
+    subdomain: String,
+    token: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct PbConfig {
+    access_token: String,
+    device_iden: Option<String>,
+}

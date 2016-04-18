@@ -1,0 +1,5 @@
+#[derive(Deserialize)]
+struct Config {
+    access_token: String,
+    device_iden: Option<String>,
+}

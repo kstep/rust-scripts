@@ -1,6 +1,3 @@
-#![feature(custom_derive, plugin)]
-#![plugin(serde_macros)]
-
 extern crate pb;
 extern crate serde;
 extern crate script_utils as utils;
@@ -8,11 +5,7 @@ extern crate script_utils as utils;
 use pb::{PbAPI, PushMsg, TargetIden, Push, PushData};
 use std::env;
 
-#[derive(Deserialize)]
-struct Config {
-    access_token: String,
-    device_iden: Option<String>,
-}
+include!(concat!(env!("OUT_DIR"), "/trans-done-pb.rs"));
 
 fn main() {
     let pbcfg = utils::load_config::<Config>("pushbullet/config.toml").unwrap();

@@ -56,9 +56,9 @@ fn main() {
     }
 
     let push = PushMsg {
-        title: Some(String::new("New home IP address")),
+        title: Some("New home IP address".into()),
         // TODO: this clone is not really necessary most of time
-        body: Some(my_ip_addr.clone()),
+        body: Some((&*my_ip_addr).into()),
         target: TargetIden::CurrentUser,
         data: PushData::Note,
         source_device_iden: pbcfg.device_iden,

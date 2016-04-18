@@ -1,4 +1,3 @@
-#![feature(fmt_radix)]
 #![cfg_attr(test, feature(test))]
 
 #[cfg(test)]
@@ -6,7 +5,6 @@ extern crate test;
 
 use std::env;
 use std::io::{self, Write};
-use std::fmt;
 use std::path::Path;
 use std::fs::metadata;
 use std::os::unix::fs::MetadataExt;
@@ -55,7 +53,7 @@ fn systemd_encode(inp: &str) -> String {
             }
         } else {
             out.push_str(r"\x");
-            out.push_str(&*fmt::radix(b, 16).to_string());
+            out.push_str(&*format!("{:02x}", b));
         }
     }
     out

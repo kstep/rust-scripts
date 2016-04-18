@@ -42,8 +42,8 @@ fn notify(api: &mut PbAPI, device_iden: Option<String>, title: &str, url: &str) 
     println!("added torrent {}: {}", title, url);
 
     let push = PushMsg {
-        title: Some("New LostFilm release".to_string()),
-        body: Some(title.to_string()),
+        title: Some("New LostFilm release".into()),
+        body: Some(title.into()),
         target: TargetIden::CurrentUser,
         data: PushData::Link(Url::parse(url).ok()),
         source_device_iden: device_iden,
@@ -79,8 +79,8 @@ fn login<'a>(login: &str, password: &str) -> CookieJar<'a> {
         "act" => "login"
     ].into_iter());
 
-    let input_re = Regex::new("<input .*?name=\"(\\w+)\" .*?value=\"([^\"]*)\"");
-    let action_re = Regex::new("action=\"([^\"]+)\"");
+    let input_re = Regex::new("<input .*?name=\"(\\w+)\" .*?value=\"([^\"]*)\"").unwrap();
+    let action_re = Regex::new("action=\"([^\"]+)\"").unwrap();
 
     let mut cookie_jar = CookieJar::new(b"3b53fc89707a78fae45eeafff931f054");
 
@@ -218,8 +218,8 @@ fn get_torrent_urls(cookie_jar: &CookieJar,
 
 fn extract_torrent_link(cookie_jar: &CookieJar, details_url: &str) -> String {
     debug!("extracting torrent link for {}", details_url);
-    let a_download_tag_re = Regex::new(r#"<a href="javascript:\{\};" onMouseOver="setCookie\('(\w+)','([a-f0-9]+)'\)" class="a_download" onClick="ShowAllReleases\('([0-9]+)','([0-9.]+)','([0-9]+)'\)"></a>"#);
-    let torrent_link_re = Regex::new(r#"href="(http://tracktor\.in/td\.php\?s=[^"]+)""#);
+    let a_download_tag_re = Regex::new(r#"<a href="javascript:\{\};" onMouseOver="setCookie\('(\w+)','([a-f0-9]+)'\)" class="a_download" onClick="ShowAllReleases\('([0-9]+)','([0-9.]+)','([0-9]+)'\)"></a>"#).unwrap();
+    let torrent_link_re = Regex::new(r#"href="(http://tracktor\.in/td\.php\?s=[^"]+)""#).unwrap();
 
     let mut client = Client::new();
     client.set_redirect_policy(RedirectPolicy::FollowAll);

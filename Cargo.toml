@@ -2,6 +2,7 @@
 authors = ["Konstantin Stepanov <me@kstep.me>"]
 name = "scripts"
 version = "0.0.1"
+build = "build.rs"
 
 [build-dependencies]
 serde_codegen = "0.7.2"

@@ -13,8 +13,8 @@ fn main() {
     let torrent_name = env::var("TR_TORRENT_NAME").unwrap();
     let torrent_dir = env::var("TR_TORRENT_DIR").unwrap();
     let push = PushMsg {
-        title: Some("Torrent download complete".to_string()),
-        body: Some(format!("{} downloaded to {}", torrent_name, torrent_dir)),
+        title: Some("Torrent download complete".into()),
+        body: Some(format!("{} downloaded to {}", torrent_name, torrent_dir).into()),
         target: TargetIden::CurrentUser,
         data: PushData::Note,
         source_device_iden: pbcfg.device_iden,

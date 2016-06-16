@@ -27,7 +27,7 @@ use test::Bencher;
 #[derive(Debug)]
 struct AcctInfo {
     enabled: bool,
-    account: i32,
+    account: f32,
     days: i32,
     price: i32,
     credit: Option<i32>,
@@ -36,7 +36,7 @@ struct AcctInfo {
 impl fmt::Display for AcctInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(writeln!(f, "Enabled: {}", self.enabled));
-        try!(writeln!(f, "Account: {} rub", self.account));
+        try!(writeln!(f, "Account: {:.2} rub", self.account));
         try!(writeln!(f, "Days left: {}", self.days));
         try!(writeln!(f, "Price per Mib: {} rub", self.price));
         if let Some(ref c) = self.credit {
@@ -71,7 +71,7 @@ const EXIT_ERROR: i32 = 2;
 
 fn main() {
     let state_re = Regex::new(r">Аккаунт</td>\s*<td class='right'><b>Включен<").unwrap();
-    let account_re = Regex::new(r"Осталось трафика на сумму</td>\s*<td class='right'><b>(-?[0-9 ]+)").unwrap();
+    let account_re = Regex::new(r"Осталось трафика на сумму</td>\s*<td class='right'><b>(-?[0-9. ]+)").unwrap();
     let days_re = Regex::new(r"осталось <b>(-?\d+) д").unwrap();
     let price_re = Regex::new(r"тариф</td>\s*<td class='right'><b>(\d+) ").unwrap();
     let credit_re = Regex::new(r"кредит</td>\s*<td class='right'><b>(\d+)%").unwrap();
@@ -118,7 +118,7 @@ fn main() {
         enabled: state_re.is_match(&*cont),
         account: account_re.captures(&*cont)
                            .and_then(|c| c.at(1).and_then(|v| v.replace(" ", "").parse().ok()))
-                           .unwrap_or(0),
+                           .unwrap_or(0f32),
         days: days_re.captures(&*cont)
                      .and_then(|c| c.at(1).and_then(|v| v.parse().ok()))
                      .unwrap_or(0),
